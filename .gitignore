@@ -61,3 +61,6 @@ test-output.txt
 
 # stray résumé content artifact
 tailored.json
+
+# personal batch applications
+applications/
