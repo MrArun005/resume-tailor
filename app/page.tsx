@@ -4,11 +4,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { PreviewFrame } from "@/components/PreviewFrame";
 import { TEMPLATES, getTemplate, type TemplateId } from "@/lib/templates";
 import type { ResumeContent } from "@/lib/content";
+import { diffResume, type ResumeDiff } from "@/lib/diff";
+import { DiffView } from "@/components/DiffView";
 
 type Tier = "fast" | "best";
 type Phase = "idle" | "analyzing" | "analyzed" | "tailoring" | "done";
 type Tab = "original" | "tailored";
 type Engine = { provider: string; model: string };
+type Version = {
+  label: string;
+  tailoredContent: unknown;
+  tailoredHtml: string;
+  changes: string[];
+  customization: string;
+};
 
 const EXPORTS: { fmt: "pdf" | "docx" | "txt" | "md"; label: string }[] = [
   { fmt: "pdf", label: "PDF" },
@@ -32,6 +41,7 @@ type Persisted = {
   engine: Engine | null;
   tab: Tab;
   template: TemplateId;
+  versions: Version[];
 };
 
 export default function Home() {
@@ -52,6 +62,10 @@ export default function Home() {
 
   const [tab, setTab] = useState<Tab>("original");
   const [template, setTemplate] = useState<TemplateId>("mirror");
+  const [versions, setVersions] = useState<Version[]>([]);
+  const [showDiff, setShowDiff] = useState(false);
+  // Baseline for the diff: -1 = the original (analyzed) résumé; ≥0 = a saved version index.
+  const [compareBaseIdx, setCompareBaseIdx] = useState(-1);
   const [drag, setDrag] = useState(false);
   const [error, setError] = useState("");
   const [exporting, setExporting] = useState<string>("");
@@ -89,6 +103,7 @@ export default function Home() {
         if (s.engine) setEngine(s.engine);
         if (s.tab) setTab(s.tab);
         if (s.template) setTemplate(s.template);
+        if (Array.isArray(s.versions)) setVersions(s.versions);
         // Never restore a transient busy phase — derive a resting one from data.
         setPhase(s.tailoredHtml ? "done" : s.templateHtml ? "analyzed" : "idle");
       }
@@ -115,6 +130,7 @@ export default function Home() {
         engine,
         tab,
         template,
+        versions: versions.slice(-5),
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {
@@ -135,6 +151,7 @@ export default function Home() {
     engine,
     tab,
     template,
+    versions,
   ]);
 
   const analyze = useCallback(async (base64: string) => {
@@ -208,6 +225,19 @@ export default function Home() {
       setTailoredContent(data.tailoredContent);
       setChanges(data.changes ?? []);
       setEngine(data.engine);
+      // Save this run as a version (keep the last 5) so it can be diffed/revisited.
+      setVersions((prev) =>
+        [
+          ...prev,
+          {
+            label: `v${prev.length + 1}`,
+            tailoredContent: data.tailoredContent,
+            tailoredHtml: data.tailoredHtml,
+            changes: data.changes ?? [],
+            customization: custom,
+          },
+        ].slice(-5)
+      );
       setTab("tailored");
       setPhase("done");
     } catch (e) {
@@ -271,6 +301,24 @@ export default function Home() {
         ? (getTemplate(template)?.render(activeContent) ?? mirrorHtml)
         : mirrorHtml;
 
+  // Deterministic diff of the current tailored content vs the chosen baseline.
+  const diffBase =
+    compareBaseIdx >= 0 && versions[compareBaseIdx]
+      ? versions[compareBaseIdx].tailoredContent
+      : content;
+  const diff: ResumeDiff | null =
+    showDiff && tailoredContent && diffBase
+      ? diffResume(diffBase as ResumeContent, tailoredContent as ResumeContent)
+      : null;
+
+  // Load a saved version into the current view (preview + export reflect it).
+  function loadVersion(v: Version) {
+    setTailoredHtml(v.tailoredHtml);
+    setTailoredContent(v.tailoredContent);
+    setChanges(v.changes);
+    setTab("tailored");
+  }
+
   // Wipe the locally-stored session (résumé content, tailored versions, JD, etc.).
   function clearData() {
     if (!window.confirm("Clear your résumé, job description, and all tailored results from this browser?")) {
@@ -292,6 +340,9 @@ export default function Home() {
     setEngine(null);
     setTab("original");
     setTemplate("mirror");
+    setVersions([]);
+    setShowDiff(false);
+    setCompareBaseIdx(-1);
     setPhase("idle");
     setError("");
     setCanRetry(false);
@@ -543,19 +594,75 @@ export default function Home() {
               )}
             </div>
 
-            {changes.length > 0 && (
+            {versions.length > 0 && (
               <div className="panel rise" style={{ padding: 22 }}>
-                <span className="step-title">What changed</span>
-                <p className="micro" style={{ margin: "6px 0 8px", letterSpacing: "0.1em" }}>
-                  Review before you send
-                </p>
-                <div>
-                  {changes.map((c, i) => (
-                    <div key={i} className="change-row">
-                      <span className="tick">✓</span>
-                      <span>{c}</span>
+                <div className="flex items-center justify-between" style={{ marginBottom: 8, gap: 8, flexWrap: "wrap" }}>
+                  <span className="step-title">What changed</span>
+                  {versions.length > 1 && (
+                    <select
+                      className="seg"
+                      style={{ fontSize: 12, padding: "4px 6px" }}
+                      onChange={(e) => {
+                        const v = versions[Number(e.target.value)];
+                        if (v) loadVersion(v);
+                      }}
+                      defaultValue={versions.length - 1}
+                      title="View a saved version"
+                    >
+                      {versions.map((v, i) => (
+                        <option key={i} value={i}>
+                          {v.label}
+                          {i === versions.length - 1 ? " (latest)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                {changes.length > 0 && (
+                  <>
+                    <p className="micro" style={{ margin: "0 0 8px", letterSpacing: "0.1em" }}>
+                      Review before you send
+                    </p>
+                    <div>
+                      {changes.map((c, i) => (
+                        <div key={i} className="change-row">
+                          <span className="tick">✓</span>
+                          <span>{c}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </>
+                )}
+
+                <div style={{ marginTop: 14, borderTop: "1px solid var(--line)", paddingTop: 14 }}>
+                  <div className="flex items-center justify-between" style={{ gap: 8, flexWrap: "wrap" }}>
+                    <button className="btn btn-ghost" onClick={() => setShowDiff((v) => !v)}>
+                      {showDiff ? "Hide diff" : "Compare changes"}
+                    </button>
+                    {showDiff && (
+                      <label className="micro" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        vs
+                        <select
+                          value={compareBaseIdx}
+                          onChange={(e) => setCompareBaseIdx(Number(e.target.value))}
+                          style={{ fontSize: 12, padding: "3px 6px" }}
+                        >
+                          <option value={-1}>Original</option>
+                          {versions.slice(0, -1).map((v, i) => (
+                            <option key={i} value={i}>
+                              {v.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                  </div>
+                  {showDiff && diff && (
+                    <div style={{ marginTop: 12 }}>
+                      <DiffView diff={diff} />
+                    </div>
+                  )}
                 </div>
               </div>
             )}
