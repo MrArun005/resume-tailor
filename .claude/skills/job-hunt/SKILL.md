@@ -118,7 +118,26 @@ Maintain `applications/INDEX.md` — one row per job, so the codes are the track
 | JOB-001 | Acme | Senior Engineer | 88% | careers@acme.com | <link> | draft ready |
 ```
 
-## Step 5 — Deliver
+## Step 5b — Bind it all together (batch)
+
+For a batch, after fetching jobs and rendering a few **résumé variants** into
+`applications/resumes/` (e.g. an AI/full-stack one, a founding-engineer one, an
+enterprise/systems one), run the binder:
+
+```bash
+node scripts/build-applications.mjs --dir applications --name "<Candidate Name>"
+```
+
+It reads `applications/jobs.json`, picks the best-fit résumé variant per job, and
+writes **`applications/WHERE-TO-APPLY.md`** — a single map of *role → which résumé to
+send → apply link* (with fit tag + any email). For every job whose JD exposed an
+**email**, it generates a ready **cold-email `.eml`** in `applications/drafts/` with
+the right résumé attached. Also write `applications/README.md` explaining the folder.
+
+This is the bound deliverable: **search → résumé variants → where-to-apply map →
+cold-email drafts**, all in one folder.
+
+## Step 5 — Deliver (single job)
 
 Report the absolute path of `applications/` and `INDEX.md`, and a quick summary
 (how many tailored, coverage range). Tell the user: open each `JOB-NNN` folder, review
