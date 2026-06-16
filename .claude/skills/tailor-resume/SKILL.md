@@ -134,7 +134,9 @@ Tell the candidate what you trimmed and why. Never hand back a near-empty traili
 
 ### 5. Deliver
 
-- Tell the user where the HTML file is.
+- **State the full absolute path of the saved file** (the renderer prints it as
+  "Saved résumé to: …"). Always surface it clearly — never make the user hunt for
+  where the résumé went. If you also produced a PDF, give its absolute path too.
 - **For a PDF:** open the HTML in any browser and Print → "Save as PDF". The page
   size (US Letter) and 1.25cm margins are already set via CSS `@page`, so the PDF
   matches the preview exactly. (If `playwright`/`puppeteer` or a headless Chrome is
