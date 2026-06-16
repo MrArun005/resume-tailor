@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tailorwright
 
-## Getting Started
+Upload your résumé, paste a job description, and get a tailored version **in your
+résumé's own layout**. Single-session and private — nothing is stored.
 
-First, run the development server:
+- **Layout fidelity:** the AI reads your PDF and reconstructs it as a self-contained
+  HTML/CSS template, then rewrites the content for the job while preserving the design.
+- **Grounded:** the model is instructed never to fabricate employers, titles, dates,
+  degrees, or technologies — it only reframes what's truthfully in your résumé.
+- **Exports:** PDF (pixel-accurate via headless Chromium), Word (.docx), plain text, Markdown.
+- **Engines:** Claude and Gemini, switchable. Fast / Best quality toggle.
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+pnpm exec playwright install chromium   # for PDF export
+cp .env.example .env.local              # add ANTHROPIC_API_KEY and/or GEMINI_API_KEY
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## How it works
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. `POST /api/analyze` — PDF → `{ content, templateHtml }` (layout reconstruction).
+2. `POST /api/tailor` — `{ content, templateHtml, jobDescription }` → `{ tailoredContent, tailoredHtml, changes[] }`.
+3. `POST /api/export` — `{ format, html | content }` → downloadable file.
 
-## Learn More
+See [`SPEC.md`](./SPEC.md) for the full design.
 
-To learn more about Next.js, take a look at the following resources:
+## Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Next.js 16 · React 19 · TypeScript · Tailwind 4 · `@anthropic-ai/sdk` · `@google/genai`
+· Playwright · html-to-docx.

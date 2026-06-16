@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# debug: raw model responses
+gemini-last-response.txt
+
+# brainstorming visual companion
+.superpowers/
