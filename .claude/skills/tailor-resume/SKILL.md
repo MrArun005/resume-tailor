@@ -68,10 +68,13 @@ summarize, add, or drop anything at this stage):
 }
 ```
 
-### 2. Find the gaps and ask (this is what makes the result great)
+### 2. Find the gaps and ask — ALWAYS do this before tailoring
 
-Before tailoring, compare what the job description asks for against what the résumé
-actually contains. List the JD's important requirements, skills, and terms, and
+**This step is mandatory, not optional.** It is the single biggest driver of a strong
+result, so never skip it silently. The only time you may skip it is when the candidate
+has *explicitly* said "just tailor what's there" or already handed you their highlights.
+
+Compare what the job description asks for against what the résumé actually contains. List the JD's important requirements, skills, and terms, and
 identify the ones the résumé does **not** evidence.
 
 A tailor can only reframe what's on the page — it cannot surface experience the
@@ -120,6 +123,15 @@ node scripts/render.mjs tailored.json <template> "<Candidate Name> - tailored.ht
 self-contained HTML document with print margins (1.25cm on every page) and smart
 pagination already baked in.
 
+**Mind the length — aim for 1–2 pages.** A résumé that spills a few lines onto a
+near-empty extra page reads as careless. After rendering, estimate the page count
+(very roughly: a full single-column page in `modern`/`classic` holds ~45–55 lines of
+content; `compact` holds noticeably more). If it overflows ~2 pages:
+- prefer the **`compact`** template, and/or
+- trim the **least-relevant** material — a tangential personal project, a redundant
+  bullet, an over-long summary — favoring what the JD actually rewards.
+Tell the candidate what you trimmed and why. Never hand back a near-empty trailing page.
+
 ### 5. Deliver
 
 - Tell the user where the HTML file is.
@@ -133,9 +145,13 @@ pagination already baked in.
   before sending.
 - **Report ATS keyword coverage** — list the JD's key keywords/skills, mark which the
   tailored résumé now covers vs. still misses, and give a rough match (e.g. "covers
-  21/25 JD keywords; still missing: Kubernetes, RAG, vector search"). For any still
-  missing, remind the candidate they can add the genuinely-true ones (loop back to
-  step 2) — never suggest adding something untrue to game the score.
+  21/25 JD keywords; still missing: Kubernetes, RAG, vector search").
+  **Match by concept, not exact wording** — "reviewed code" counts as "code review",
+  "AWS / GCP" counts as "cloud", "distributed microservices" counts as "distributed
+  systems". Only mark a keyword missing if the *concept* genuinely isn't represented;
+  do not penalize the résumé for phrasing something differently than the JD did.
+  For anything genuinely missing, remind the candidate they can add the truthful ones
+  (loop back to step 2) — never suggest adding something untrue to game the score.
 
 ## Notes
 
