@@ -212,7 +212,13 @@ export default function Home() {
     try {
       const html = showHtml;
       const exportContent = activeContent ?? content;
-      const base = fileName.replace(/\.pdf$/i, "") || "resume";
+      // Name the file after the résumé's owner + a date-time stamp.
+      const resumeName =
+        (activeContent?.name ?? "").trim() || fileName.replace(/\.pdf$/i, "") || "resume";
+      const now = new Date();
+      const p = (n: number) => String(n).padStart(2, "0");
+      const stamp = `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())} ${p(now.getHours())}-${p(now.getMinutes())}-${p(now.getSeconds())}`;
+      const base = `${resumeName} - ${stamp}`;
       const res = await fetch("/api/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -220,7 +226,7 @@ export default function Home() {
           format: fmt,
           html,
           content: exportContent,
-          filename: `${base}-tailored`,
+          filename: base,
         }),
       });
       if (!res.ok) {
@@ -231,7 +237,7 @@ export default function Home() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${base}-tailored.${fmt}`;
+      a.download = `${base}.${fmt}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
