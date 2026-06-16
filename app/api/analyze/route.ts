@@ -3,6 +3,7 @@ import { getProvider } from "@/lib/ai";
 import type { ProviderName, Tier } from "@/lib/ai/types";
 import { ANALYZE_PROMPT } from "@/lib/ai/prompts";
 import { ResumeContentSchema, extractJson } from "@/lib/content";
+import { normalizeResumeHtml } from "@/lib/templates/layout";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -25,7 +26,8 @@ export async function POST(req: NextRequest) {
 
     const parsed = extractJson(raw) as { content?: unknown; templateHtml?: unknown };
     const content = ResumeContentSchema.parse(parsed.content ?? {});
-    const templateHtml = typeof parsed.templateHtml === "string" ? parsed.templateHtml : "";
+    const templateHtml =
+      typeof parsed.templateHtml === "string" ? normalizeResumeHtml(parsed.templateHtml) : "";
 
     if (!templateHtml) {
       return NextResponse.json(
