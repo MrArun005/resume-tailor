@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { content, templateHtml, jobDescription } = body;
+    const customization: string = typeof body.customization === "string" ? body.customization : "";
     const tier: Tier = body.tier === "best" ? "best" : "fast";
     const pref: ProviderName | undefined = body.provider;
 
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
     const provider = getProvider(pref);
     console.log(`[tailor] start · provider=${provider.name} tier=${tier} jd=${jobDescription.length}ch`);
 
-    const prompt = buildTailorInput({ content, templateHtml, jobDescription });
+    const prompt = buildTailorInput({ content, templateHtml, jobDescription, customization });
     const raw = await provider.generate({ prompt, tier });
     console.log(`[tailor] model returned ${raw.length} chars`);
 

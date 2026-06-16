@@ -22,6 +22,7 @@ const STORAGE_KEY = "tailorwright:v1";
 type Persisted = {
   fileName: string;
   jd: string;
+  custom: string;
   tier: Tier;
   templateHtml: string;
   content: unknown;
@@ -38,6 +39,7 @@ export default function Home() {
 
   const [fileName, setFileName] = useState("");
   const [jd, setJd] = useState("");
+  const [custom, setCustom] = useState("");
   const [tier, setTier] = useState<Tier>("fast");
 
   const [phase, setPhase] = useState<Phase>("idle");
@@ -77,6 +79,7 @@ export default function Home() {
         const s = JSON.parse(raw) as Partial<Persisted>;
         if (s.fileName) setFileName(s.fileName);
         if (s.jd) setJd(s.jd);
+        if (s.custom) setCustom(s.custom);
         if (s.tier) setTier(s.tier);
         if (s.templateHtml) setTemplateHtml(s.templateHtml);
         if (s.content) setContent(s.content);
@@ -102,6 +105,7 @@ export default function Home() {
       const data: Persisted = {
         fileName,
         jd,
+        custom,
         tier,
         templateHtml,
         content,
@@ -121,6 +125,7 @@ export default function Home() {
     phase,
     fileName,
     jd,
+    custom,
     tier,
     templateHtml,
     content,
@@ -189,7 +194,13 @@ export default function Home() {
       const res = await fetch("/api/tailor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, templateHtml, jobDescription: jd, tier }),
+        body: JSON.stringify({
+          content,
+          templateHtml,
+          jobDescription: jd,
+          customization: custom,
+          tier,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Tailoring failed.");
@@ -414,6 +425,20 @@ export default function Home() {
                 placeholder="Paste the full job posting — responsibilities, requirements, the lot. The more detail, the sharper the tailoring."
                 value={jd}
                 onChange={(e) => setJd(e.target.value)}
+              />
+
+              <div className="flex items-center gap-2" style={{ margin: "16px 0 8px" }}>
+                <span className="step-title" style={{ fontSize: 14 }}>
+                  Customization
+                </span>
+                <span className="micro">optional</span>
+              </div>
+              <textarea
+                className="jd"
+                style={{ minHeight: 96 }}
+                placeholder="Highlights to make sure are included — e.g. led a team of 6, AWS certified, shipped X to 10k users. One per line. These are treated as true facts about you and woven in."
+                value={custom}
+                onChange={(e) => setCustom(e.target.value)}
               />
             </div>
 

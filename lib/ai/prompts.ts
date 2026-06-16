@@ -46,6 +46,7 @@ You are given, below:
 1. CONTENT — the candidate's structured resume content (JSON).
 2. TEMPLATE_HTML — the exact, complete HTML document of their current resume.
 3. JOB_DESCRIPTION — the target role.
+4. CUSTOMIZATION — optional highlights/points the candidate wants included (may be empty).
 
 Rewrite the resume so it aligns strongly with the job description:
 - Mirror the JD's keywords, required skills, and terminology — but ONLY where it is truthful to the candidate's real experience.
@@ -53,9 +54,15 @@ Rewrite the resume so it aligns strongly with the job description:
 - Reorder and emphasize the most relevant experience, skills, and projects for this role.
 - Surface latent, genuinely-held skills that the JD asks for.
 
+CUSTOMIZATION — if the candidate provided highlights/points below:
+- Treat them as TRUE facts the candidate is supplying about themselves (not fabrication). Incorporate each point into the most relevant section, phrased to fit the resume's voice and the target role.
+- Weave them in as normal resume text — do NOT add bold, italics, markers, or any special formatting to flag them.
+- If a point clearly belongs to an existing entry, fold it in there; otherwise place it in the most fitting section. Do not duplicate a point already present.
+- If CUSTOMIZATION is empty, ignore this section.
+
 HARD CONSTRAINTS (never violate):
-- Do NOT invent or alter employers, job titles, dates, degrees, certifications, or technologies the candidate never listed.
-- Every claim must be grounded in the original resume. You may rephrase, reframe, and reorder — never fabricate.
+- Do NOT invent or alter employers, job titles, dates, degrees, certifications, or technologies on your OWN initiative. Everything must be grounded either in the original resume OR in the candidate-supplied CUSTOMIZATION points.
+- You may rephrase, reframe, and reorder — never fabricate beyond what the resume and the candidate's own customization provide.
 
 Return a SINGLE JSON object and nothing else:
 {
@@ -70,6 +77,7 @@ export function buildTailorInput(args: {
   content: unknown;
   templateHtml: string;
   jobDescription: string;
+  customization?: string;
 }): string {
   return [
     TAILOR_PROMPT,
@@ -82,5 +90,8 @@ export function buildTailorInput(args: {
     "",
     "=== JOB_DESCRIPTION ===",
     args.jobDescription,
+    "",
+    "=== CUSTOMIZATION ===",
+    args.customization?.trim() || "(none provided)",
   ].join("\n");
 }
