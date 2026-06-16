@@ -68,7 +68,8 @@ Return a SINGLE JSON object and nothing else:
 {
   "tailoredContent": { /* same schema as CONTENT, with rewritten text */ },
   "tailoredHtml": string,   // the SAME document as TEMPLATE_HTML — identical <style>, classes, tags, and layout — with ONLY the visible resume text replaced by the tailored content. Do NOT change fonts, colors, spacing, margins, or structure.
-  "changes": string[]       // 4-8 short, plain-language notes describing the most important tailoring changes, for the candidate to review
+  "changes": string[],      // 4-8 short, plain-language notes describing the most important tailoring changes, for the candidate to review
+  "keywords": string[]      // the 15-30 most important skills, tools, and concrete terms from the JOB_DESCRIPTION that an ATS or recruiter would screen for, normalized to how they'd appear on a résumé (e.g. "Node.js", "REST APIs", "multi-agent systems", "data privacy"). Include them whether or not the candidate has them — this list is used to score résumé coverage.
 }
 
 Return ONLY the JSON object.`;

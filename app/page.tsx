@@ -6,6 +6,7 @@ import { TEMPLATES, getTemplate, type TemplateId } from "@/lib/templates";
 import type { ResumeContent } from "@/lib/content";
 import { diffResume, type ResumeDiff } from "@/lib/diff";
 import { DiffView } from "@/components/DiffView";
+import { coverage, resumeText } from "@/lib/ats";
 
 type Tier = "fast" | "best";
 type Phase = "idle" | "analyzing" | "analyzed" | "tailoring" | "done";
@@ -17,6 +18,7 @@ type Version = {
   tailoredHtml: string;
   changes: string[];
   customization: string;
+  keywords: string[];
 };
 
 const EXPORTS: { fmt: "pdf" | "docx" | "txt" | "md"; label: string }[] = [
@@ -38,6 +40,7 @@ type Persisted = {
   tailoredHtml: string;
   tailoredContent: unknown;
   changes: string[];
+  keywords: string[];
   engine: Engine | null;
   tab: Tab;
   template: TemplateId;
@@ -58,6 +61,7 @@ export default function Home() {
   const [tailoredHtml, setTailoredHtml] = useState("");
   const [tailoredContent, setTailoredContent] = useState<unknown>(null);
   const [changes, setChanges] = useState<string[]>([]);
+  const [keywords, setKeywords] = useState<string[]>([]);
   const [engine, setEngine] = useState<Engine | null>(null);
 
   const [tab, setTab] = useState<Tab>("original");
@@ -100,6 +104,7 @@ export default function Home() {
         if (s.tailoredHtml) setTailoredHtml(s.tailoredHtml);
         if (s.tailoredContent) setTailoredContent(s.tailoredContent);
         if (s.changes) setChanges(s.changes);
+        if (s.keywords) setKeywords(s.keywords);
         if (s.engine) setEngine(s.engine);
         if (s.tab) setTab(s.tab);
         if (s.template) setTemplate(s.template);
@@ -127,6 +132,7 @@ export default function Home() {
         tailoredHtml,
         tailoredContent,
         changes,
+        keywords,
         engine,
         tab,
         template,
@@ -148,6 +154,7 @@ export default function Home() {
     tailoredHtml,
     tailoredContent,
     changes,
+    keywords,
     engine,
     tab,
     template,
@@ -224,6 +231,7 @@ export default function Home() {
       setTailoredHtml(data.tailoredHtml);
       setTailoredContent(data.tailoredContent);
       setChanges(data.changes ?? []);
+      setKeywords(data.keywords ?? []);
       setEngine(data.engine);
       // Save this run as a version (keep the last 5) so it can be diffed/revisited.
       setVersions((prev) =>
@@ -235,6 +243,7 @@ export default function Home() {
             tailoredHtml: data.tailoredHtml,
             changes: data.changes ?? [],
             customization: custom,
+            keywords: data.keywords ?? [],
           },
         ].slice(-5)
       );
@@ -316,8 +325,20 @@ export default function Home() {
     setTailoredHtml(v.tailoredHtml);
     setTailoredContent(v.tailoredContent);
     setChanges(v.changes);
+    setKeywords(v.keywords ?? []);
     setTab("tailored");
   }
+
+  // Append a missing JD keyword to the customization box (the gap-fill path).
+  function addToCustomization(term: string) {
+    setCustom((c) => (c.trim() ? `${c}\n${term}` : term));
+  }
+
+  // Deterministic ATS keyword coverage of the current tailored content vs the JD.
+  const cov =
+    tailoredContent && keywords.length
+      ? coverage(keywords, resumeText(tailoredContent as ResumeContent))
+      : null;
 
   // Wipe the locally-stored session (résumé content, tailored versions, JD, etc.).
   function clearData() {
@@ -337,6 +358,7 @@ export default function Home() {
     setTailoredHtml("");
     setTailoredContent(null);
     setChanges([]);
+    setKeywords([]);
     setEngine(null);
     setTab("original");
     setTemplate("mirror");
@@ -593,6 +615,41 @@ export default function Home() {
                 </div>
               )}
             </div>
+
+            {cov && (
+              <div className="panel rise" style={{ padding: 22 }}>
+                <div className="flex items-center justify-between" style={{ marginBottom: 10, gap: 8, flexWrap: "wrap" }}>
+                  <span className="step-title">ATS keyword match</span>
+                  <span className="chip">
+                    <span className="dot" />
+                    {cov.score}% · {cov.covered.length}/{cov.total}
+                  </span>
+                </div>
+                {cov.missing.length > 0 ? (
+                  <>
+                    <p className="micro" style={{ margin: "0 0 10px" }}>
+                      Missing from your résumé. Click any that are <strong>genuinely true</strong> to add
+                      them below, then re-tailor:
+                    </p>
+                    <div className="flex" style={{ flexWrap: "wrap", gap: 6 }}>
+                      {cov.missing.map((m, i) => (
+                        <button
+                          key={i}
+                          className="btn btn-ghost"
+                          style={{ fontSize: 12, padding: "3px 9px" }}
+                          onClick={() => addToCustomization(m)}
+                          title="Add to Customization"
+                        >
+                          + {m}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="micro">Every JD keyword is represented in your résumé. 🎯</p>
+                )}
+              </div>
+            )}
 
             {versions.length > 0 && (
               <div className="panel rise" style={{ padding: 22 }}>

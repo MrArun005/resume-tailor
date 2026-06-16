@@ -68,7 +68,25 @@ summarize, add, or drop anything at this stage):
 }
 ```
 
-### 2. Tailor the content to the job
+### 2. Find the gaps and ask (this is what makes the result great)
+
+Before tailoring, compare what the job description asks for against what the résumé
+actually contains. List the JD's important requirements, skills, and terms, and
+identify the ones the résumé does **not** evidence.
+
+A tailor can only reframe what's on the page — it cannot surface experience the
+candidate has but didn't write down. So **ask**:
+
+> "This role emphasizes X, Y, and Z, which I don't see on your résumé. Have you done
+> anything along those lines — even adjacent or from side projects? If so, tell me and
+> I'll work it in. If not, no problem — I won't invent it."
+
+Fold whatever the candidate confirms into the tailoring as truthful customization.
+Keep this light and skippable: if the candidate says "just tailor what's there," or
+gave their highlights already, proceed without interrogating. The goal is to *catch
+true-but-missing material*, never to pressure anyone into padding.
+
+### 3. Tailor the content to the job
 
 Produce a tailored copy of that JSON. Apply these principles (explained so you can
 exercise judgment, not follow blindly):
@@ -89,7 +107,7 @@ dates, degrees, certifications, or technologies. Everything must be grounded in 
 original résumé *or* in the candidate's own customization input. Rephrase, reframe,
 reorder — never make things up.
 
-### 3. Render
+### 4. Render
 
 Write the tailored JSON to a file (e.g. `tailored.json`), then run the bundled
 renderer from this skill's directory:
@@ -102,7 +120,7 @@ node scripts/render.mjs tailored.json <template> "<Candidate Name> - tailored.ht
 self-contained HTML document with print margins (1.25cm on every page) and smart
 pagination already baked in.
 
-### 4. Deliver
+### 5. Deliver
 
 - Tell the user where the HTML file is.
 - **For a PDF:** open the HTML in any browser and Print → "Save as PDF". The page
@@ -113,6 +131,11 @@ pagination already baked in.
   Skills to lead with the cloud stack the JD emphasizes", "Quantified the migration
   bullet with the 40% latency figure you mentioned"). This lets the candidate review
   before sending.
+- **Report ATS keyword coverage** — list the JD's key keywords/skills, mark which the
+  tailored résumé now covers vs. still misses, and give a rough match (e.g. "covers
+  21/25 JD keywords; still missing: Kubernetes, RAG, vector search"). For any still
+  missing, remind the candidate they can add the genuinely-true ones (loop back to
+  step 2) — never suggest adding something untrue to game the score.
 
 ## Notes
 

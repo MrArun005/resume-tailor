@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
       tailoredContent?: unknown;
       tailoredHtml?: unknown;
       changes?: unknown;
+      keywords?: unknown;
     };
     console.log(
       `[tailor] parsed · html=${typeof parsed.tailoredHtml === "string" ? parsed.tailoredHtml.length + "ch" : "missing"} changes=${Array.isArray(parsed.changes) ? parsed.changes.length : 0}`
@@ -55,11 +56,15 @@ export async function POST(req: NextRequest) {
     const changes = Array.isArray(parsed.changes)
       ? parsed.changes.filter((c): c is string => typeof c === "string")
       : [];
+    const keywords = Array.isArray(parsed.keywords)
+      ? parsed.keywords.filter((k): k is string => typeof k === "string")
+      : [];
 
     return NextResponse.json({
       tailoredContent,
       tailoredHtml,
       changes,
+      keywords,
       engine: { provider: provider.name, model: provider.modelFor(tier) },
     });
   } catch (err) {
