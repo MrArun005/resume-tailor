@@ -27,10 +27,11 @@ type Args = {
   company: string;
   out?: string;
   model: string;
+  pdf: boolean;
 };
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { template: "classic", custom: "", company: "", model: "claude-opus-4-8" };
+  const args: Args = { template: "classic", custom: "", company: "", model: "claude-opus-4-8", pdf: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const next = () => argv[++i];
@@ -41,6 +42,7 @@ function parseArgs(argv: string[]): Args {
     else if (a === "--company") args.company = next() ?? "";
     else if (a === "--out") args.out = next();
     else if (a === "--model") args.model = next() ?? args.model;
+    else if (a === "--pdf") args.pdf = true;
   }
   return args;
 }
@@ -84,7 +86,7 @@ async function main() {
   if (!args.resume || !args.jd) {
     console.error(
       "Usage: pnpm tailor --resume <file.pdf|file.txt> --jd <file|text> " +
-        "[--template classic|modern|compact|mirror] [--company <name>] [--custom <text>] [--out <file.html>] [--model <id>]"
+        "[--template classic|modern|compact|mirror] [--company <name>] [--custom <text>] [--pdf] [--out <file.html>] [--model <id>]"
     );
     process.exit(1);
   }
@@ -173,6 +175,22 @@ async function main() {
   ].filter(Boolean);
   const outPath = args.out ?? `${nameParts.join(" - ")}.html`;
   writeFileSync(outPath, html);
+
+  // Optional PDF (Playwright is a project dependency).
+  if (args.pdf) {
+    const pdfPath = outPath.replace(/\.html?$/i, "") + ".pdf";
+    const { chromium } = await import("playwright");
+    const browser = await chromium.launch();
+    const page = await browser.newPage();
+    await page.route("**/*", (r) => {
+      const u = r.request().url();
+      return u.startsWith("data:") || u.startsWith("about:") ? r.continue() : r.abort();
+    });
+    await page.setContent(html, { waitUntil: "load" });
+    await page.pdf({ path: pdfPath, format: "Letter", printBackground: true, preferCSSPageSize: true });
+    await browser.close();
+    console.error(`Saved PDF to: ${pdfPath}`);
+  }
 
   console.error(`\n[tailor-cli] wrote ${outPath} (template: ${args.template})`);
   if (changes.length) {

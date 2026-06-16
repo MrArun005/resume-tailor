@@ -1,13 +1,26 @@
 import type { ResumeContent } from "./content";
 
 // Normalize for matching: lowercase, keep alphanumerics + a few skill-significant
-// characters (. + # -) so "Node.js", "C++", "C#" survive, collapse whitespace.
+// characters (. + #) so "Node.js", "C++", "C#" survive. Hyphens become spaces so
+// "full-stack" ≈ "full stack" and "end-to-end" ≈ "end to end". Collapse whitespace.
 function norm(s: string): string {
   return s
     .toLowerCase()
-    .replace(/[^a-z0-9+#.\- ]+/g, " ")
+    .replace(/[^a-z0-9+#. ]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+const STOP = new Set([
+  "the", "a", "an", "and", "or", "of", "to", "in", "for", "with", "on", "at",
+  "by", "is", "as", "that", "this", "from", "into", "across",
+]);
+
+// Significant stemmed tokens of a phrase (drops stopwords and 1-2 char tokens).
+function sigTokens(phrase: string): string[] {
+  return stemPhrase(phrase)
+    .split(" ")
+    .filter((t) => t.length > 2 && !STOP.has(t));
 }
 
 // Tiny stemmer so "pipelines"≈"pipeline", "crawling"≈"crawl", "services"≈"servic".
@@ -23,7 +36,12 @@ function stem(w: string): string {
 }
 
 function stemPhrase(s: string): string {
-  return norm(s).split(" ").map(stem).join(" ");
+  // Strip edge dots so a sentence-final "optimization." matches "optimization"
+  // while an internal dot ("node.js") is preserved.
+  return norm(s)
+    .split(" ")
+    .map((t) => stem(t.replace(/^\.+|\.+$/g, "")))
+    .join(" ");
 }
 
 // Concept aliases — the JD often words a requirement differently than a résumé does.
@@ -74,6 +92,7 @@ export interface Coverage {
 // this is the honest, deterministic, testable scorer.
 export function coverage(keywords: string[], text: string): Coverage {
   const hay = stemPhrase(text);
+  const haySet = new Set(hay.split(" "));
   const covered: string[] = [];
   const missing: string[] = [];
   const seen = new Set<string>();
@@ -82,8 +101,20 @@ export function coverage(keywords: string[], text: string): Coverage {
     if (!key || seen.has(key)) continue;
     seen.add(key);
     const skey = stemPhrase(key);
+    // 1) Direct/alias substring match.
     const probes = [skey, ...(STEM_ALIASES[skey] ?? []).map(stemPhrase)].filter(Boolean);
-    (probes.some((p) => hay.includes(p)) ? covered : missing).push(k);
+    let hit = probes.some((p) => hay.includes(p));
+    // 2) Multi-word concept: covered if ≥60% of its significant tokens appear,
+    //    so "performance optimization" matches "performance ... optimization"
+    //    even when the words are scattered.
+    if (!hit) {
+      const toks = sigTokens(key);
+      if (toks.length >= 2) {
+        const matched = toks.filter((t) => haySet.has(t)).length;
+        hit = matched / toks.length >= 0.6;
+      }
+    }
+    (hit ? covered : missing).push(k);
   }
   const total = covered.length + missing.length;
   const score = total === 0 ? 0 : Math.round((covered.length / total) * 100);
