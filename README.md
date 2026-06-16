@@ -1,17 +1,26 @@
 # Tailorwright
 
-Tailor a résumé to a job description — in your résumé's **own layout**, or in a
-clean ATS-friendly template — with the claim that every line stays grounded in
-what you actually wrote.
+A complete **job-hunting** tool. Point it at your résumé and either **one job** or
+**tens of jobs**, and it will: find fresh postings, tailor a truthful, ATS-ready
+résumé to each, render HTML/PDF, draft a ready-to-send email per role, and hand you
+a single **where-to-apply map** — every line stays grounded in what you actually wrote.
 
 ![Tailorwright web app](docs/screenshots/app.png)
+
+Two ways to use it:
+
+- **Tailor one résumé** to one job — in your résumé's **own layout** or a clean
+  ATS-friendly template (web app, CLI, or the `/job-hunt` skill).
+- **Find & batch-apply** — fetch tens of real jobs from free sources (optionally only
+  the **latest**, e.g. last 24h), tailor a résumé variant to each, generate cold-email
+  drafts where a JD exposes an address, and track every application by a code.
 
 It ships in **four forms** so anyone can use it:
 
 | Form | For whom | How it tailors | Needs |
 |---|---|---|---|
 | **Web app** | Anyone with a browser | Calls Claude or Gemini server-side | An API key, a running server |
-| **Claude Code Skill** (`/job-hunt`) | Anyone using Claude Code | Claude does it in-session | Just Claude Code — no API key |
+| **Claude Code Skill** (`/job-hunt`) | Anyone using Claude Code | Finds jobs + tailors in-session, single or batch | Just Claude Code — no API key |
 | **Subagent** (`resume-tailor`) | Claude Code workflows | Wraps the skill | Just Claude Code |
 | **Headless CLI** (`pnpm tailor`) | CI, cron, scripts | `@anthropic-ai/sdk` | `ANTHROPIC_API_KEY` |
 
@@ -50,6 +59,21 @@ stays local. It renders a clean, ATS-friendly HTML/PDF you can send.
   page breaks instead of leaving gaps.
 - **Exports:** PDF, Word (.docx), plain text, Markdown.
 
+### Find & batch-apply (the `/job-hunt` skill)
+
+- **Find real jobs, free:** merges **Adzuna** (broad, incl. India — free key) with
+  **Remotive / RemoteOK / Arbeitnow** (no key) and any **Greenhouse / Lever** company
+  boards you name. No Apify, no paid proxies, no LinkedIn/Indeed scraping.
+- **Latest-only filter:** `--days N` keeps just the freshest postings (`--days 1` =
+  last 24h), sorted newest-first, with a **Posted** date on every row.
+- **One profile, many jobs:** interview once to capture true-but-off-résumé material,
+  then tailor every job from that profile without re-interviewing.
+- **Where-to-apply map:** a single `WHERE-TO-APPLY.md` mapping each role → which résumé
+  variant to send → apply link, with a fit tag and the post date.
+- **Cold-email drafts:** for any role whose JD exposes an email, a ready `.eml`
+  (résumé attached) is generated — double-click, review, send. **Nothing auto-sends.**
+- **Tracked:** each application gets a code (`JOB-001`, …) in an `applications/` folder.
+
 A résumé rendered into the **Modern** template:
 
 ![Modern template](docs/screenshots/template-modern.png)
@@ -70,13 +94,27 @@ pnpm dev                                # http://localhost:3000
 
 ## Claude Code Skill / Subagent
 
-Installed under [`.claude/`](.claude/). In Claude Code:
+Installed under [`.claude/`](.claude/). In Claude Code, **`/job-hunt`** does both
+single and batch — **Claude tailors in-session: no API key, no server, no third-party
+service; your résumé stays local.**
 
-- `/job-hunt` — point it at a résumé file + a job description (+ optional
-  template/highlights). **Claude does the tailoring in-session — no API key, no
-  server, no third-party service; your résumé stays local.** It renders to HTML via
-  [`.claude/skills/job-hunt/scripts/render.mjs`](.claude/skills/job-hunt/scripts/render.mjs)
-  (dependency-free) and you Print → Save as PDF.
+- **Single job:** point it at a résumé file + a job description (+ optional
+  template/highlights). It renders to HTML via
+  [`scripts/render.mjs`](.claude/skills/job-hunt/scripts/render.mjs) (dependency-free)
+  and PDF via [`scripts/topdf.mjs`](.claude/skills/job-hunt/scripts/topdf.mjs).
+- **Batch ("find jobs and apply"):** it fetches real jobs, tailors a résumé variant to
+  each, builds the where-to-apply map, and drafts cold emails. Fetch directly:
+
+  ```bash
+  # latest Bangalore full-stack roles from the last 24h (set Adzuna keys for India coverage)
+  ADZUNA_APP_ID=… ADZUNA_APP_KEY=… node .claude/skills/job-hunt/scripts/fetch-jobs.mjs \
+    --query "full stack engineer" --location Bangalore --country in --days 1 \
+    --limit 80 --out applications/jobs.json
+  node .claude/skills/job-hunt/scripts/build-applications.mjs --dir applications --name "Your Name"
+  ```
+
+  `--days` is the recency filter (omit for all, `1` = last 24h, `3`/`7` for a fuller
+  fresh batch). Output lands in `applications/` — open `WHERE-TO-APPLY.md` first.
 - The `resume-tailor` subagent is a thin specialist that invokes the skill from
   larger workflows.
 

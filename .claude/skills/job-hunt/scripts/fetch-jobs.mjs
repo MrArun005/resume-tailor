@@ -8,6 +8,10 @@
 //
 //   --days N : only postings from the last N days (1 = last 24h), newest first.
 //              Adzuna filters server-side; other sources filter on their post date.
+//              If --days is omitted and you're at a terminal, it ASKS interactively.
+//   Smart widen: if a window returns too few jobs it auto-opens 1→3→7→14→any until
+//              there are enough (--min N, default 8). Pass --exact to disable widening.
+//              --no-prompt skips the interactive question (defaults to "any").
 //
 // Sources (all free):
 //   • Remotive, RemoteOK, Arbeitnow      — no key, remote/startup heavy
@@ -21,8 +25,14 @@ for (let i = 2; i < process.argv.length; i++) {
 }
 const QUERY = (args.query || "").toString();
 const LOCATION = (args.location || "").toString();
-const DAYS = args.days ? parseInt(args.days, 10) : 0; // 0 = no recency filter; 1 = last 24h
+// Recency: --days N (1 = last 24h, 0 = any). When omitted we ask interactively
+// (TTY) or default to "any". --exact disables the auto-widen ladder; --min N sets
+// how many results count as "enough" before we stop widening.
+let DAYS = args.days != null ? parseInt(args.days, 10) : null; // null = not specified yet
+const EXACT = !!args.exact || !!args["no-widen"];
+const NOPROMPT = !!args["no-prompt"];
 const LIMIT = parseInt(args.limit || "20", 10);
+const MIN = args.min != null ? parseInt(args.min, 10) : Math.min(8, LIMIT); // "enough" threshold for widening
 const OUT = args.out || "applications/jobs.json";
 const terms = QUERY.toLowerCase().split(/\s+/).filter((t) => t.length > 2);
 
@@ -107,7 +117,7 @@ async function lever(token) {
     posted: j.createdAt ? new Date(j.createdAt).toISOString() : "",
   }));
 }
-async function adzuna() {
+async function adzuna(days) {
   const id = process.env.ADZUNA_APP_ID, key = process.env.ADZUNA_APP_KEY;
   if (!id || !key) return [];
   const country = (args.country || "in").toString();
@@ -117,7 +127,7 @@ async function adzuna() {
   for (let p = 1; p <= pages; p++) {
     const u = `https://api.adzuna.com/v1/api/jobs/${country}/search/${p}?app_id=${id}&app_key=${key}`
       + `&what=${encodeURIComponent(QUERY)}${LOCATION ? `&where=${encodeURIComponent(LOCATION)}` : ""}`
-      + `${DAYS ? `&max_days_old=${DAYS}&sort_by=date` : ""}&results_per_page=${perPage}&content-type=application/json`;
+      + `${days ? `&max_days_old=${days}&sort_by=date` : ""}&results_per_page=${perPage}&content-type=application/json`;
     try {
       const d = await getJSON(u);
       const items = (d.results || []).map((j) => ({
@@ -132,36 +142,73 @@ async function adzuna() {
   return out;
 }
 
-const tasks = [remotive(), remoteok(), arbeitnow(), adzuna()];
-for (const t of (args.gh ? String(args.gh).split(",") : [])) tasks.push(greenhouse(t.trim()));
-for (const t of (args.lever ? String(args.lever).split(",") : [])) tasks.push(lever(t.trim()));
-
-const settled = await Promise.allSettled(tasks);
-const used = [], failed = [];
-let all = [];
-for (const s of settled) {
-  if (s.status === "fulfilled") { all = all.concat(s.value); if (s.value[0]?.source) used.push(s.value[0].source.split(":")[0]); }
-  else failed.push(s.reason?.message || "error");
+// Fetch the date-independent sources once (Adzuna is queried per-window since it
+// can filter server-side). Cached so widening the window doesn't re-hit them.
+let baseRaw = null;
+const failed = [];
+async function getBaseRaw() {
+  if (baseRaw) return baseRaw;
+  const tasks = [remotive(), remoteok(), arbeitnow()];
+  for (const t of (args.gh ? String(args.gh).split(",") : [])) tasks.push(greenhouse(t.trim()));
+  for (const t of (args.lever ? String(args.lever).split(",") : [])) tasks.push(lever(t.trim()));
+  const settled = await Promise.allSettled(tasks);
+  let all = [];
+  for (const s of settled) {
+    if (s.status === "fulfilled") all = all.concat(s.value);
+    else failed.push(s.reason?.message || "error");
+  }
+  baseRaw = all;
+  return all;
 }
 
-// filter (relevance + location), dedupe by title+company, cap to LIMIT
-const seen = new Set();
-let jobs = all
-  .filter((j) => j.title && j.url && relevant(j.title) && locOk(j.location, j.remote))
-  .filter((j) => {
-    // Dedupe key ignores a trailing "(City)" so the same role across many cities collapses to one.
-    const k = `${j.title.replace(/\s*\([^)]*\)\s*$/, "").trim()}|${j.company}`.toLowerCase();
-    if (seen.has(k)) return false; seen.add(k); return true;
-  });
-// Recency filter: keep only jobs posted within the last DAYS (when set + date known).
-if (DAYS) {
-  const cutoff = Date.now() - DAYS * 864e5;
-  jobs = jobs.filter((j) => j.posted && Date.parse(j.posted) >= cutoff);
+// Build the final job list for a given recency window (days; 0/null = any).
+async function gather(days) {
+  let adz;
+  try { adz = await adzuna(days); } catch { adz = []; failed.push("Adzuna"); }
+  const all = (await getBaseRaw()).concat(adz);
+  const seen = new Set();
+  let jobs = all
+    .filter((j) => j.title && j.url && relevant(j.title) && locOk(j.location, j.remote))
+    .filter((j) => {
+      // Dedupe key ignores a trailing "(City)" so the same role across cities collapses to one.
+      const k = `${j.title.replace(/\s*\([^)]*\)\s*$/, "").trim()}|${j.company}`.toLowerCase();
+      if (seen.has(k)) return false; seen.add(k); return true;
+    });
+  if (days) {
+    const cutoff = Date.now() - days * 864e5;
+    jobs = jobs.filter((j) => j.posted && Date.parse(j.posted) >= cutoff);
+  }
+  // Sort: location matches first (not cut by the limit), then newest-first.
+  const hit = (j) => (LOCATION && (j.location || "").toLowerCase().includes(LOCATION.toLowerCase()) ? 0 : 1);
+  jobs.sort((a, b) => hit(a) - hit(b) || (Date.parse(b.posted || 0) || 0) - (Date.parse(a.posted || 0) || 0));
+  return jobs.slice(0, LIMIT).map((j) => ({ ...j, email: extractEmail(j.description) }));
 }
-// Sort: location matches first (not cut by the limit), then newest-first.
-const hit = (j) => (LOCATION && (j.location || "").toLowerCase().includes(LOCATION.toLowerCase()) ? 0 : 1);
-jobs.sort((a, b) => hit(a) - hit(b) || (Date.parse(b.posted || 0) || 0) - (Date.parse(a.posted || 0) || 0));
-jobs = jobs.slice(0, LIMIT).map((j) => ({ ...j, email: extractEmail(j.description) }));
+
+// --- Decide the recency window: ask (TTY) → smart auto-widen ladder. ---
+const LADDER = [1, 3, 7, 14, 0]; // 0 = any (widest); rank() makes it sort last
+const rank = (d) => (d === 0 || d == null ? Infinity : d);
+const label = (d) => (d === 0 || d == null ? "any time" : d === 1 ? "last 24h" : `last ${d} days`);
+
+if (DAYS == null && !NOPROMPT && process.stdin.isTTY) {
+  const rl = (await import("node:readline/promises")).createInterface({ input: process.stdin, output: process.stdout });
+  const ans = (await rl.question("How fresh should jobs be?  [1] 24h  [3] 3 days  [7] week  [0] any  (default 3): ")).trim();
+  rl.close();
+  DAYS = ans === "" ? 3 : parseInt(ans, 10);
+  if (Number.isNaN(DAYS)) DAYS = 3;
+}
+if (DAYS == null) DAYS = 0; // non-interactive, unspecified → no filter
+
+let jobs = await gather(DAYS);
+let usedDays = DAYS;
+// Smart widen: if too few results, open the window step by step until enough.
+if (!EXACT && rank(DAYS) !== Infinity) {
+  for (const d of LADDER.filter((x) => rank(x) > rank(DAYS)).sort((a, b) => rank(a) - rank(b))) {
+    if (jobs.length >= MIN) break;
+    console.log(`Only ${jobs.length} job(s) within ${label(usedDays)} — widening to ${label(d)}…`);
+    jobs = await gather(d);
+    usedDays = d;
+  }
+}
 
 const { writeFileSync, mkdirSync } = await import("node:fs");
 const { dirname, resolve } = await import("node:path");
@@ -169,7 +216,7 @@ mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, JSON.stringify(jobs, null, 2));
 
 const withEmail = jobs.filter((j) => j.email).length;
-console.log(`Fetched ${jobs.length} jobs → ${resolve(OUT)}  (${withEmail} include an apply email in the JD)`);
+console.log(`\nFetched ${jobs.length} jobs (${label(usedDays)}) → ${resolve(OUT)}  (${withEmail} include an apply email in the JD)`);
 if (failed.length) console.log(`(sources that errored: ${failed.length} — others still returned results)`);
 console.log("");
 for (const j of jobs) console.log(`• ${(j.posted || "").slice(0, 10) || "  ?  "}  ${j.title} — ${j.company} — ${j.location || (j.remote ? "Remote" : "?")}  [${j.source.split(":")[0]}]`);

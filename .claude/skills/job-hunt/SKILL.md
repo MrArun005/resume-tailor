@@ -53,10 +53,15 @@ re-interviewing per job**. Never add anything the candidate didn't confirm.
     [--days 1] --limit 20 [--gh stripe,vercel] [--lever ramp,notion] --out applications/jobs.json
   ```
 
-  Pass **`--days N`** to keep only fresh postings (`--days 1` = last 24h), sorted
-  newest-first — use it when the user wants "latest" / "today's" jobs. 24h is strict
-  (few results); widen to `--days 3` or `--days 7` for a fuller fresh batch. Output
-  carries a `posted` date per job, surfaced as a **Posted** column in WHERE-TO-APPLY.md.
+  **Recency is dynamic — ask, then auto-widen.** When the user wants "latest"/"today's"
+  jobs, first **ask how fresh** they want it (24h / 3 days / week / any), then pass it
+  as `--days N` (`--days 1` = last 24h), sorted newest-first. The script **auto-widens**
+  a too-narrow window (1 → 3 → 7 → 14 → any) until there are enough results (`--min N`,
+  default 8) and prints each widening step — so a "last 24h" request that only has 2
+  hits quietly becomes a usable 3-day batch instead of coming back near-empty. Pass
+  `--exact` to hold a strict window, `--no-prompt` to skip the question (run from a
+  skill where you already asked the user). Every job carries a `posted` date, surfaced
+  as a **Posted** column in WHERE-TO-APPLY.md.
 
   It merges **Remotive / RemoteOK / Arbeitnow** (no key; remote/startup-heavy),
   **Greenhouse / Lever** per company (`--gh`/`--lever`, no key, full JD — get tokens
