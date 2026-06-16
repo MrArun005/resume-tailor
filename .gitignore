@@ -55,3 +55,6 @@ test-output.txt
 # personal tailored résumé outputs — never commit
 *tailored.html
 *tailored.pdf
+
+# personal email drafts
+*.eml
