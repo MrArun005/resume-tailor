@@ -51,3 +51,7 @@ gemini-last-response.txt
 # local test/debug artifacts
 .playwright-mcp/
 test-output.txt
+
+# personal tailored résumé outputs — never commit
+*tailored.html
+*tailored.pdf

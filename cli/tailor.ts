@@ -17,6 +17,7 @@ import { ANALYZE_PROMPT, buildTailorInput } from "../lib/ai/prompts";
 import { ResumeContentSchema, extractJson } from "../lib/content";
 import { getTemplate, type TemplateId } from "../lib/templates";
 import { normalizeResumeHtml } from "../lib/templates/layout";
+import { coverage, resumeText } from "../lib/ats";
 
 type Args = {
   resume?: string;
@@ -133,6 +134,7 @@ async function main() {
     tailoredContent?: unknown;
     tailoredHtml?: unknown;
     changes?: unknown;
+    keywords?: unknown;
   };
   const finalContent = ResumeContentSchema.parse(tailored.tailoredContent ?? baseContent);
   const changes = Array.isArray(tailored.changes)
@@ -163,6 +165,20 @@ async function main() {
     console.error("\nWhat changed:");
     for (const c of changes) console.error(`  • ${c}`);
   }
+
+  // ATS keyword coverage report.
+  const kw = Array.isArray(tailored.keywords)
+    ? tailored.keywords.filter((k): k is string => typeof k === "string")
+    : [];
+  if (kw.length) {
+    const cov = coverage(kw, resumeText(finalContent));
+    console.error(`\nATS keyword match: ${cov.score}% (${cov.covered.length}/${cov.total})`);
+    if (cov.missing.length) {
+      console.error("Missing — add the genuinely true ones via --custom and re-run:");
+      console.error(`  ${cov.missing.join(", ")}`);
+    }
+  }
+
   console.error("\nFor a PDF: open the HTML in a browser and Print → Save as PDF (margins are baked in).");
 }
 
