@@ -1,12 +1,13 @@
 ---
 name: apply
 description: >-
-  End-to-end job-application agent: pull a job posting, tailor the résumé to it,
-  and produce a ready-to-send email draft (application or cold email) with the
-  tailored résumé attached — for the user to review and send. Use when the user
-  wants to "apply to this job", "draft an application", "send my résumé for this
-  role", "write a cold email to this recruiter", or hands over a job link/posting
-  and wants the whole application prepared. Builds on the tailor-resume skill.
+  End-to-end job-application agent: optionally SEARCH for matching jobs, pull a
+  posting, tailor the résumé to it, and produce a ready-to-send email draft
+  (application or cold email) with the tailored résumé attached — for the user to
+  review and send. Use when the user wants to "find jobs for me", "apply to this
+  job", "draft an application", "send my résumé for this role", "write a cold email
+  to this recruiter", or hands over a job link/posting (or search criteria) and
+  wants the application prepared. Builds on the tailor-resume skill.
 ---
 
 # Apply — job → tailored résumé → ready-to-send draft
@@ -17,14 +18,32 @@ tailoring never fabricates, and the user is always the one who hits Send.
 
 ## Inputs to gather
 
-1. **The job** — a posting URL (preferred) or pasted text. Also the candidate's
-   **résumé** file (if not already known from the conversation).
+1. **The job** — either a posting URL/pasted text, OR search criteria so the skill
+   can **find jobs** (see step 0). Also the candidate's **résumé** file.
 2. **Send target** — an apply/recruiter email address if the user has one. If not,
    that's fine; the draft uses a clear placeholder the user fills in on review.
 3. **Email kind** — application email, cold email, or let the context decide
    (application when there's an apply address; cold outreach when reaching a person).
 
 ## Workflow
+
+### 0. Find jobs (when the user hasn't given a specific posting)
+
+If the user wants the skill to *find* roles rather than supplying a URL, gather a
+few criteria — **role/title, location (or remote), seniority, and any must-haves**
+(stack, company type). Infer sensible defaults from the résumé when the user is
+terse (e.g. their current title + city).
+
+Then search:
+- Use the **web search** tool for queries like `"<role>" "<location>" jobs` or
+  source-scoped queries (`site:boards.greenhouse.io <role>`, `site:jobs.lever.co`,
+  `site:job-boards.greenhouse.io`) to surface real, linkable postings.
+- Or drive the **browser engine** to a board's results page and extract listings.
+
+Present a **shortlist (5–8)**: title · company · location · link. Let the user pick
+one (or a few). Then continue from step 1 for each chosen posting. Don't invent
+postings or links — only list results you actually found; if search is thin, say so
+and ask the user to narrow or supply a URL.
 
 ### 1. Pull the job details (browser engine)
 
