@@ -15,7 +15,8 @@
 //
 // Sources (all free):
 //   • Remotive, RemoteOK, Arbeitnow      — no key, remote/startup heavy
-//   • Greenhouse / Lever / Ashby (--gh / --lever / --ashby) — no key, per-company, full JD
+//   • Greenhouse / Lever / Ashby / SmartRecruiters (--gh / --lever / --ashby / --sr) — no key, per-company, full JD
+//   • JobPosting JSON-LD (--jsonld <careers-url,…>) — parse schema.org data any page publishes
 //   • Adzuna (broad incl. India)          — set ADZUNA_APP_ID + ADZUNA_APP_KEY (free) to enable
 
 const args = {};
@@ -142,6 +143,69 @@ async function ashby(token) {
     salary: j.compensation?.compensationTierSummary || "",
   }));
 }
+async function smartrecruiters(token) {
+  // SmartRecruiters' public Posting API (no key). List gives metadata; the full JD
+  // needs a per-posting detail call, so we only spend those on title-relevant roles.
+  const list = await getJSON(`https://api.smartrecruiters.com/v1/companies/${token}/postings?limit=100`);
+  const out = [];
+  let detailBudget = 25;
+  for (const p of (list.content || [])) {
+    if (!relevant(p.name)) continue;
+    let description = "", applyUrl = `https://jobs.smartrecruiters.com/${token}/${p.id}`;
+    if (detailBudget > 0) {
+      detailBudget--;
+      try {
+        const d = await getJSON(`https://api.smartrecruiters.com/v1/companies/${token}/postings/${p.id}`);
+        const s = d.jobAd?.sections || {};
+        description = [s.companyDescription, s.jobDescription, s.qualifications, s.additionalInformation]
+          .map((x) => htmlToText(x?.text)).filter(Boolean).join("\n\n");
+        if (d.applyUrl) applyUrl = d.applyUrl;
+      } catch { /* keep list-level data */ }
+    }
+    out.push({
+      title: p.name, company: p.company?.name || token,
+      location: p.location?.fullLocation || p.location?.city || "", remote: !!p.location?.remote,
+      url: applyUrl, description, source: `SmartRecruiters:${token}`,
+      posted: p.releasedDate || "",
+    });
+  }
+  return out;
+}
+async function jsonld(url) {
+  // Parse schema.org JobPosting structured data published on a careers page. This is
+  // machine-readable data the site intends for crawlers — legal, no scraping tricks.
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), 20000);
+  let html;
+  try {
+    // A normal browser UA — we're reading a page's own published JobPosting data;
+    // some sites serve a stub to unknown agents. Not evasion: no proxies, no cookies.
+    const r = await fetch(url, { signal: ctrl.signal, redirect: "follow", headers: {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+      "Accept": "text/html",
+    } });
+    html = await r.text();
+  } finally { clearTimeout(to); }
+  const blocks = [...html.matchAll(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi)].map((m) => m[1]);
+  const jobs = [];
+  for (const b of blocks) {
+    let data; try { data = JSON.parse(b.trim()); } catch { continue; }
+    const items = Array.isArray(data) ? data : (data["@graph"] || [data]);
+    for (const it of items) {
+      if (!it || ![].concat(it["@type"] || []).includes("JobPosting")) continue;
+      const loc = [].concat(it.jobLocation || [])[0]?.address || {};
+      jobs.push({
+        title: it.title, company: it.hiringOrganization?.name || "",
+        location: [loc.addressLocality, loc.addressRegion].filter(Boolean).join(", ") || (typeof it.jobLocationType === "string" ? it.jobLocationType : ""),
+        remote: /remote|telecommute/i.test(JSON.stringify(it.jobLocationType || "")),
+        url: it.url || url, description: htmlToText(it.description), source: "JSON-LD",
+        posted: it.datePosted || "",
+        salary: it.baseSalary?.value?.value ? String(it.baseSalary.value.value) : "",
+      });
+    }
+  }
+  return jobs;
+}
 async function adzuna(days) {
   const id = process.env.ADZUNA_APP_ID, key = process.env.ADZUNA_APP_KEY;
   if (!id || !key) return [];
@@ -178,6 +242,8 @@ async function getBaseRaw() {
   for (const t of (args.gh ? String(args.gh).split(",") : [])) tasks.push(greenhouse(t.trim()));
   for (const t of (args.lever ? String(args.lever).split(",") : [])) tasks.push(lever(t.trim()));
   for (const t of (args.ashby ? String(args.ashby).split(",") : [])) tasks.push(ashby(t.trim()));
+  for (const t of (args.sr ? String(args.sr).split(",") : [])) tasks.push(smartrecruiters(t.trim()));
+  for (const u of (args.jsonld ? String(args.jsonld).split(",") : [])) tasks.push(jsonld(u.trim()));
   const settled = await Promise.allSettled(tasks);
   let all = [];
   for (const s of settled) {

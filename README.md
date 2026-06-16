@@ -62,13 +62,16 @@ stays local. It renders a clean, ATS-friendly HTML/PDF you can send.
 ### Find & batch-apply (the `/job-hunt` skill)
 
 - **Find real jobs, free:** merges **Adzuna** (broad, incl. India — free key) with
-  **Remotive / RemoteOK / Arbeitnow** (no key) and any **Greenhouse / Lever / Ashby**
-  company boards you name (full JDs, often listed *before* LinkedIn). No Apify, no paid
+  **Remotive / RemoteOK / Arbeitnow** (no key), any **Greenhouse / Lever / Ashby /
+  SmartRecruiters** company boards you name (full JDs, often listed *before* LinkedIn),
+  and **JobPosting JSON-LD** from any server-rendered careers page. No Apify, no paid
   proxies, no LinkedIn/Indeed scraping — everything within each source's terms.
 - **Latest-only filter:** `--days N` keeps just the freshest postings (`--days 1` =
   last 24h), sorted newest-first, with a **Posted** date on every row.
 - **Match score + ranking:** each job is scored 0–100 for profile↔JD fit and the list
-  is ranked **best-fit first** (deterministic, no API; the skill refines it in-session).
+  is ranked **best-fit first** — keyword + title/seniority by default (no API), with an
+  optional `--semantic` mode that blends in a **local embedding model** (free, offline,
+  no key) to catch fit that keywords miss.
 - **Salary intelligence:** captures the posting's salary range where exposed.
 - **One profile, many jobs:** interview once to capture true-but-off-résumé material,
   then tailor every job from that profile without re-interviewing.
@@ -83,6 +86,9 @@ stays local. It renders a clean, ATS-friendly HTML/PDF you can send.
 - **Tracking dashboard:** each application gets a code (`JOB-001`, …) and a status
   lifecycle (saved → applied → interview → offer/rejected) in `DASHBOARD.md`, with
   follow-up reminders — update it with `track.mjs set JOB-003 applied`.
+- **Daily auto-hunt (free):** an optional GitHub Actions workflow fetches + scores
+  every weekday morning and uploads a ranked digest artifact — zero-effort, nothing
+  personal committed (Adzuna keys via repo secrets).
 
 A résumé rendered into the **Modern** template:
 
@@ -160,6 +166,7 @@ templates as the web app.
 
 ```bash
 pnpm test        # vitest — template renderers, HTML normalizer, résumé diff
+node --test .claude/skills/job-hunt/scripts/score-jobs.test.mjs   # match-scorer ranking guard
 ```
 
 ## Troubleshooting

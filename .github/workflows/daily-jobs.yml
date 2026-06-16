@@ -1,0 +1,63 @@
+name: Daily job hunt
+
+# Free, scheduled job hunt: fetch fresh roles → score/rank → upload a digest
+# artifact. Nothing personal is committed (the artifact is downloadable from the
+# run). Set repo Secrets ADZUNA_APP_ID / ADZUNA_APP_KEY for India/Bangalore depth,
+# and optional repo Variables JOB_QUERY / JOB_LOCATION / JOB_DAYS / JOB_SKILLS.
+
+on:
+  workflow_dispatch:
+    inputs:
+      query:    { description: "Search query",   default: "full stack engineer", type: string }
+      location: { description: "Location",        default: "Bangalore",           type: string }
+      days:     { description: "Recency (days)",  default: "3",                   type: string }
+  schedule:
+    - cron: "0 3 * * 1-5"   # ~08:30 IST, weekday mornings
+
+permissions:
+  contents: read
+
+jobs:
+  hunt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Fetch → score → digest
+        env:
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          # Pass all (untrusted) inputs via env, then read as quoted shell vars —
+          # never interpolate ${{ }} directly into the script (injection-safe).
+          IN_QUERY: ${{ github.event.inputs.query }}
+          IN_LOCATION: ${{ github.event.inputs.location }}
+          IN_DAYS: ${{ github.event.inputs.days }}
+          VAR_QUERY: ${{ vars.JOB_QUERY }}
+          VAR_LOCATION: ${{ vars.JOB_LOCATION }}
+          VAR_DAYS: ${{ vars.JOB_DAYS }}
+          JOB_SKILLS: ${{ vars.JOB_SKILLS }}
+        run: |
+          set -e
+          Q="${IN_QUERY:-${VAR_QUERY:-full stack engineer}}"
+          L="${IN_LOCATION:-${VAR_LOCATION:-Bangalore}}"
+          D="${IN_DAYS:-${VAR_DAYS:-3}}"
+          S=".claude/skills/job-hunt/scripts"
+          echo "Hunting: '$Q' in '$L' (last $D days)"
+          node "$S/fetch-jobs.mjs" --query "$Q" --location "$L" --country in --days "$D" \
+            --no-prompt --limit 60 --out jobs.json
+          if [ -n "$JOB_SKILLS" ]; then
+            node "$S/score-jobs.mjs" --jobs jobs.json --skills "$JOB_SKILLS"
+          fi
+          node "$S/digest.mjs" --jobs jobs.json --out digest.md --title "Daily jobs — $L (last $D days)"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: job-digest-${{ github.run_number }}
+          path: |
+            jobs.json
+            digest.md
+          retention-days: 14

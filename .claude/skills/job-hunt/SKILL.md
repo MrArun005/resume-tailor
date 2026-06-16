@@ -26,6 +26,7 @@ Bundled scripts (all dependency-light, no API key, run from this skill's directo
 - `scripts/mkdraft.mjs --to … --subject … --body-file … --attach … [--attach …] --out …` — `.eml` draft (repeat `--attach` for résumé + cover)
 - `scripts/build-applications.mjs` — bind jobs ↔ résumés ↔ links (see Step 5b)
 - `scripts/track.mjs <init|set|board|list>` — application tracking dashboard (see Step 4)
+- `scripts/digest.mjs` — render jobs.json → a compact markdown digest (used by the daily hunt)
 
 ## Step 1 — Build the master profile ONCE (interview once, apply to many)
 
@@ -69,10 +70,13 @@ re-interviewing per job**. Never add anything the candidate didn't confirm.
   as a **Posted** column in WHERE-TO-APPLY.md.
 
   It merges **Remotive / RemoteOK / Arbeitnow** (no key; remote/startup-heavy),
-  **Greenhouse / Lever / Ashby** per company (`--gh`/`--lever`/`--ashby`, no key, full
-  JD, often listed there *before* LinkedIn — get tokens via a web search like
-  `site:boards.greenhouse.io <role>` or `site:jobs.ashbyhq.com <role>`), and **Adzuna**
-  (broad, incl. India — set `ADZUNA_APP_ID`+`ADZUNA_APP_KEY`, free). Output is a JSON array of
+  **Greenhouse / Lever / Ashby / SmartRecruiters** per company (`--gh`/`--lever`/
+  `--ashby`/`--sr`, no key, full JD, often listed there *before* LinkedIn — get tokens
+  via a web search like `site:boards.greenhouse.io <role>` or `site:jobs.ashbyhq.com
+  <role>`), **`--jsonld <careers-url,…>`** (parses schema.org JobPosting that a
+  server-rendered careers page publishes — SPA boards like Greenhouse/Ashby UIs inject
+  it client-side, so use their API tokens instead), and **Adzuna** (broad, incl. India —
+  set `ADZUNA_APP_ID`+`ADZUNA_APP_KEY`, free). Output is a JSON array of
   `{ title, company, location, url, description, posted, email }`. Read it and tailor each.
 
   Note for the user: the no-key sources skew **remote/global**; for dense Bangalore/
@@ -96,10 +100,17 @@ node scripts/score-jobs.mjs --jobs applications/jobs.json
 
 It reads the candidate's skills from the résumé sources in `resumes/.src/*.json` (or
 pass `--skills "react,node,…"`), writes `match` + `matchWhy` into each job, and re-sorts
-the file. This is the **deterministic, no-API baseline**. You (Claude) should then
-**refine the top candidates in-session** — read each high-scoring JD against the profile
-and adjust `match` where keyword overlap misses real semantic fit (e.g. an "AI-augmented
-development" role that's a strong fit but doesn't name your exact stack). Keep edits
+the file. This is the **deterministic, no-API baseline**.
+
+**Optional `--semantic`:** blends in TRUE semantic similarity using a *local* embedding
+model (free, offline, no API key — `npm i @huggingface/transformers`, model downloads
+once). It matches each JD against your individual résumé bullets (sentence-level
+max-pool + mean-centering), so it catches fit that keyword overlap misses — e.g. an
+"AI-augmented development" role with no exact-stack keywords still scores high. Falls
+back to the keyword baseline automatically if the package isn't installed.
+
+You (Claude) can also **refine the top candidates in-session** — read each high-scoring
+JD against the profile and nudge `match` where even semantics miss nuance. Keep edits
 truthful; the score reflects fit, never inflates it.
 
 **Company intelligence.** For the top-ranked jobs the user cares about, do a quick web
@@ -210,6 +221,14 @@ Report the absolute path of `applications/` and `INDEX.md`, and a quick summary
 (how many tailored, coverage range). Tell the user: open each `JOB-NNN` folder, review
 the résumé PDF and `draft.eml` (double-click → opens in the mail app with the résumé
 attached), fill any placeholder recipient, and **Send**.
+
+## Automate it (optional, free)
+
+`.github/workflows/daily-jobs.yml` runs the hunt on a schedule (free GitHub Actions):
+fetch → score → `digest.mjs`, uploading a `digest.md` + `jobs.json` **artifact** each
+run (nothing personal is committed). Set repo **Secrets** `ADZUNA_APP_ID`/
+`ADZUNA_APP_KEY` and optional **Variables** `JOB_QUERY`/`JOB_LOCATION`/`JOB_DAYS`/
+`JOB_SKILLS`. It's a zero-effort daily digest of fresh, ranked roles.
 
 ## Guardrails
 
