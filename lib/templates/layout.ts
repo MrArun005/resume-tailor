@@ -9,17 +9,21 @@ export function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-// Shared print/pagination CSS. Keeps every template (and the normalized mirror)
-// on identical page geometry: 1.25cm margins on every page; entries never split
-// across a page boundary; a heading never sits alone at the bottom of a page.
+// Shared print/pagination CSS. Every template (and the normalized mirror) shares
+// the same page geometry: 1.25cm margins on every page. Pagination keeps a heading
+// attached to its following content and never splits a single bullet, but allows a
+// long entry to flow across a page break — so pages fill up instead of pushing a
+// whole section to the next page and leaving a large gap.
 export function pageCss(): string {
   return `
 @page { size: Letter; margin: 1.25cm; }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .page { width: 100%; margin: 0; padding: 0; }
-.rt-entry { break-inside: avoid; page-break-inside: avoid; }
-.rt-sec-title, .rt-entry-head { break-after: avoid; page-break-after: avoid; }
+.rt-sec-title { break-after: avoid; page-break-after: avoid; }
+.rt-entry-head { break-inside: avoid; page-break-inside: avoid; break-after: avoid; page-break-after: avoid; }
+.rt-bullets li { break-inside: avoid; page-break-inside: avoid; }
+.rt-text, .rt-bullets li { orphans: 2; widows: 2; }
 `.trim();
 }
 
