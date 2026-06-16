@@ -62,5 +62,6 @@ test-output.txt
 # stray résumé content artifact
 tailored.json
 
-# personal batch applications
-applications/
+# personal batch applications (anchored to repo root — must NOT match app/applications/
+# or app/api/applications/, which are tracked web routes)
+/applications/
