@@ -10,6 +10,7 @@
 // lib/templates/. If you change one, mirror it in the other.
 
 import { readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 function escapeHtml(s) {
   return String(s ?? "")
@@ -144,4 +145,4 @@ const templateId = TEMPLATES[templateArg] ? templateArg : "classic";
 const content = JSON.parse(readFileSync(contentPath, "utf8"));
 const html = documentShell(TEMPLATES[templateId], renderBody(content));
 writeFileSync(outPath, html);
-console.log(`Wrote ${outPath} using "${templateId}" template.`);
+console.log(`Saved résumé to: ${resolve(outPath)}  (template: ${templateId})`);
