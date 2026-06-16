@@ -263,6 +263,10 @@ textarea.jd:focus {
   background: var(--ink);
   color: var(--paper);
 }
+.seg button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 
 /* preview frame */
 .previewport {
