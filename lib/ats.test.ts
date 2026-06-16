@@ -59,4 +59,39 @@ describe("coverage", () => {
     expect(r.score).toBe(0);
     expect(r.total).toBe(0);
   });
+
+  // Concept-based matching: the JD's wording often differs from the résumé's.
+  const conceptResume: ResumeContent = {
+    name: "X",
+    headline: "",
+    contact: [],
+    sections: [
+      {
+        title: "Experience",
+        blocks: [
+          {
+            heading: "",
+            subheading: "",
+            text: "Reviewed code and mentored engineers. Resolved bottlenecks across distributed microservices. Deployed on AWS and GCP. Built data ingestion pipelines.",
+            bullets: [],
+          },
+        ],
+      },
+    ],
+  };
+
+  it("matches concepts phrased differently (not just exact substrings)", () => {
+    const r = coverage(
+      ["code review", "distributed systems", "cloud services"],
+      resumeText(conceptResume)
+    );
+    expect(r.missing).toHaveLength(0);
+  });
+
+  it("stems word forms so plurals/verb endings still match", () => {
+    const r = coverage(["data pipeline", "crawl"], resumeText(conceptResume));
+    // "pipelines" in text matches "data pipeline"; "crawl" is genuinely absent.
+    expect(r.covered).toContain("data pipeline");
+    expect(r.missing).toContain("crawl");
+  });
 });
