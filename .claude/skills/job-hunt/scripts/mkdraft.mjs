@@ -13,18 +13,21 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve, basename } from "node:path";
 
 function parse(argv) {
-  const a = {};
+  const a = { attach: [] };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i];
-    if (k.startsWith("--")) a[k.slice(2)] = argv[++i];
+    if (!k.startsWith("--")) continue;
+    const key = k.slice(2);
+    if (key === "attach") a.attach.push(argv[++i]); // repeatable: résumé + cover letter
+    else a[key] = argv[++i];
   }
   return a;
 }
 
 const args = parse(process.argv.slice(2));
-if (!args.subject || !args.attach || !args.out || (!args.body && !args["body-file"])) {
+if (!args.subject || !args.attach.length || !args.out || (!args.body && !args["body-file"])) {
   console.error(
-    "Usage: node mkdraft.mjs --to <addr> --subject <text> (--body <text> | --body-file <file>) --attach <file> --out <draft.eml> [--from <addr>] [--cc <addr>]"
+    "Usage: node mkdraft.mjs --to <addr> --subject <text> (--body <text> | --body-file <file>) --attach <file> [--attach <file2> …] --out <draft.eml> [--from <addr>] [--cc <addr>]"
   );
   process.exit(1);
 }
@@ -32,20 +35,19 @@ if (!args.subject || !args.attach || !args.out || (!args.body && !args["body-fil
 const to = args.to || "RECRUITER_EMAIL_HERE";
 const subject = args.subject;
 const body = args["body-file"] ? readFileSync(args["body-file"], "utf8") : args.body;
-const attachPath = args.attach;
-const attachName = basename(attachPath);
-const attachB64 = readFileSync(attachPath).toString("base64").replace(/(.{76})/g, "$1\r\n");
 
-// MIME type from extension (PDF by default).
-const ext = attachName.toLowerCase().split(".").pop();
-const mime =
-  ext === "pdf"
-    ? "application/pdf"
-    : ext === "docx"
-      ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      : ext === "html"
-        ? "text/html"
-        : "application/octet-stream";
+const mimeFor = (name) => {
+  const ext = name.toLowerCase().split(".").pop();
+  return ext === "pdf" ? "application/pdf"
+    : ext === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    : ext === "html" ? "text/html"
+    : "application/octet-stream";
+};
+const attachments = args.attach.map((p) => ({
+  name: basename(p),
+  mime: mimeFor(basename(p)),
+  b64: readFileSync(p).toString("base64").replace(/(.{76})/g, "$1\r\n"),
+}));
 
 const boundary = `tailorwright_${Date.now().toString(36)}_${Math.floor(Math.random() * 1e9).toString(36)}`;
 const CRLF = "\r\n";
@@ -60,6 +62,15 @@ const headers = [
   `Content-Type: multipart/mixed; boundary="${boundary}"`,
 ].filter(Boolean);
 
+const attachParts = attachments.map((a) =>
+  `--${boundary}` + CRLF +
+  `Content-Type: ${a.mime}; name="${a.name}"` + CRLF +
+  `Content-Transfer-Encoding: base64` + CRLF +
+  `Content-Disposition: attachment; filename="${a.name}"` + CRLF +
+  CRLF +
+  a.b64 + CRLF
+).join("");
+
 const eml =
   headers.join(CRLF) +
   CRLF +
@@ -70,16 +81,11 @@ const eml =
   CRLF +
   body.replace(/\r?\n/g, CRLF) + CRLF +
   CRLF +
-  `--${boundary}` + CRLF +
-  `Content-Type: ${mime}; name="${attachName}"` + CRLF +
-  `Content-Transfer-Encoding: base64` + CRLF +
-  `Content-Disposition: attachment; filename="${attachName}"` + CRLF +
-  CRLF +
-  attachB64 + CRLF +
+  attachParts +
   `--${boundary}--` + CRLF;
 
 writeFileSync(args.out, eml);
 console.log(`Saved email draft to: ${resolve(args.out)}`);
 console.log(`  → To: ${to}${args.cc ? `  Cc: ${args.cc}` : ""}`);
-console.log(`  → Attached: ${attachName}`);
+console.log(`  → Attached: ${attachments.map((a) => a.name).join(", ")}`);
 console.log("  Open it (double-click) to review in your mail app, then Send.");

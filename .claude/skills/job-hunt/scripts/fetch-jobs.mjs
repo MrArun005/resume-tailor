@@ -15,7 +15,7 @@
 //
 // Sources (all free):
 //   • Remotive, RemoteOK, Arbeitnow      — no key, remote/startup heavy
-//   • Greenhouse / Lever (--gh / --lever) — no key, per-company, full JD
+//   • Greenhouse / Lever / Ashby (--gh / --lever / --ashby) — no key, per-company, full JD
 //   • Adzuna (broad incl. India)          — set ADZUNA_APP_ID + ADZUNA_APP_KEY (free) to enable
 
 const args = {};
@@ -132,6 +132,16 @@ async function lever(token) {
     posted: j.createdAt ? new Date(j.createdAt).toISOString() : "",
   }));
 }
+async function ashby(token) {
+  // Ashby exposes a free public job-board API per company (no key).
+  const d = await getJSON(`https://api.ashbyhq.com/posting-api/job-board/${token}?includeCompensation=true`);
+  return (d.jobs || []).map((j) => ({
+    title: j.title, company: token, location: j.location || "", remote: !!j.isRemote,
+    url: j.jobUrl || j.applyUrl, description: j.descriptionPlain || htmlToText(j.descriptionHtml), source: `Ashby:${token}`,
+    posted: j.publishedAt || j.updatedAt || "",
+    salary: j.compensation?.compensationTierSummary || "",
+  }));
+}
 async function adzuna(days) {
   const id = process.env.ADZUNA_APP_ID, key = process.env.ADZUNA_APP_KEY;
   if (!id || !key) return [];
@@ -167,6 +177,7 @@ async function getBaseRaw() {
   const tasks = [remotive(), remoteok(), arbeitnow()];
   for (const t of (args.gh ? String(args.gh).split(",") : [])) tasks.push(greenhouse(t.trim()));
   for (const t of (args.lever ? String(args.lever).split(",") : [])) tasks.push(lever(t.trim()));
+  for (const t of (args.ashby ? String(args.ashby).split(",") : [])) tasks.push(ashby(t.trim()));
   const settled = await Promise.allSettled(tasks);
   let all = [];
   for (const s of settled) {

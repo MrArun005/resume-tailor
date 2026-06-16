@@ -21,8 +21,9 @@ Bundled scripts (all dependency-light, no API key, run from this skill's directo
 - `scripts/fetch-jobs.mjs` — find real jobs from free sources (see Step 2)
 - `scripts/score-jobs.mjs` — AI match score + best-fit ranking (see Step 2b)
 - `scripts/render.mjs <content.json> <template> <out.html>` — content → styled HTML
+- `scripts/cover.mjs --body-file … --name … --contact … --out …` — cover letter → HTML (see Step 3)
 - `scripts/topdf.mjs <in.html> <out.pdf>` — HTML → PDF (Playwright/Puppeteer, SSRF-safe)
-- `scripts/mkdraft.mjs --to … --subject … --body-file … --attach … --out …` — `.eml` draft
+- `scripts/mkdraft.mjs --to … --subject … --body-file … --attach … [--attach …] --out …` — `.eml` draft (repeat `--attach` for résumé + cover)
 - `scripts/build-applications.mjs` — bind jobs ↔ résumés ↔ links (see Step 5b)
 - `scripts/track.mjs <init|set|board|list>` — application tracking dashboard (see Step 4)
 
@@ -54,7 +55,7 @@ re-interviewing per job**. Never add anything the candidate didn't confirm.
 
   ```bash
   node scripts/fetch-jobs.mjs --query "full stack AI engineer" --location Bangalore \
-    [--days 1] --limit 20 [--gh stripe,vercel] [--lever ramp,notion] --out applications/jobs.json
+    [--days 1] --limit 20 [--gh stripe,vercel] [--lever ramp] [--ashby notion,ramp] --out applications/jobs.json
   ```
 
   **Recency is dynamic — ask, then auto-widen.** When the user wants "latest"/"today's"
@@ -68,9 +69,10 @@ re-interviewing per job**. Never add anything the candidate didn't confirm.
   as a **Posted** column in WHERE-TO-APPLY.md.
 
   It merges **Remotive / RemoteOK / Arbeitnow** (no key; remote/startup-heavy),
-  **Greenhouse / Lever** per company (`--gh`/`--lever`, no key, full JD — get tokens
-  via a web search like `site:boards.greenhouse.io <role>`), and **Adzuna** (broad,
-  incl. India — set `ADZUNA_APP_ID`+`ADZUNA_APP_KEY`, free). Output is a JSON array of
+  **Greenhouse / Lever / Ashby** per company (`--gh`/`--lever`/`--ashby`, no key, full
+  JD, often listed there *before* LinkedIn — get tokens via a web search like
+  `site:boards.greenhouse.io <role>` or `site:jobs.ashbyhq.com <role>`), and **Adzuna**
+  (broad, incl. India — set `ADZUNA_APP_ID`+`ADZUNA_APP_KEY`, free). Output is a JSON array of
   `{ title, company, location, url, description, posted, email }`. Read it and tailor each.
 
   Note for the user: the no-key sources skew **remote/global**; for dense Bangalore/
@@ -127,19 +129,37 @@ Inside each folder, do:
    node scripts/topdf.mjs "<...>.html" "<...>.pdf"
    ```
    Keep it 1–2 pages; if it overflows, use `compact` or trim least-relevant content.
-4. **Email draft** — write the application/cold email body to `email.txt`, then:
+4. **Cover letter** — write a short, truthful, JD-tailored letter body (salutation →
+   3 short paragraphs → sign-off) to `cover.txt`, then render it to a clean PDF that
+   matches the résumé:
+   ```bash
+   node scripts/cover.mjs --body-file "applications/JOB-001 - <Company> - <Role>/cover.txt" \
+     --name "<Candidate>" --contact "<email>, <phone>, <city>" \
+     --company "<Company>" --role "<Role>" --date "<YYYY-MM-DD>" \
+     --out "applications/JOB-001 - <Company> - <Role>/cover.html"
+   node scripts/topdf.mjs "<...>/cover.html" "<...>/<Candidate> - <Company> - Cover.pdf"
+   ```
+   Same rule as the résumé: only true claims, mirror the JD's real priorities, no filler.
+5. **Email draft** — write the application/cold email body to `email.txt`, then attach
+   **both** the résumé and the cover letter:
    ```bash
    node scripts/mkdraft.mjs --to "<apply email or omit>" \
      --subject "Application — <Role> — <Candidate>" \
      --body-file "applications/JOB-001 - <Company> - <Role>/email.txt" \
-     --attach "applications/JOB-001 - <Company> - <Role>/<...>.pdf" \
+     --attach "applications/JOB-001 - <Company> - <Role>/<Candidate> - <Company> - <date>.pdf" \
+     --attach "applications/JOB-001 - <Company> - <Role>/<Candidate> - <Company> - Cover.pdf" \
      --out "applications/JOB-001 - <Company> - <Role>/draft.eml"
    ```
    If the job carries an `email` (the fetcher auto-extracts any apply address from
    the JD), pass it as `--to`. Otherwise omit `--to` (inserts a placeholder to fill on
    review — e.g. a recruiter email found on LinkedIn). Most postings apply via a form,
    so a missing email is normal, not a failure.
-5. **`notes.md`** — 4–8 "what changed" notes + the ATS keyword coverage (match by
+6. **Interview prep** — write `prep.md`: 6–10 likely interview questions for *this* role
+   (mix of role-specific technical, system-design, and behavioral, drawn from the JD's
+   real emphases) and a truthful bullet answer for each, grounded in the master profile.
+   Flag any question the profile can't honestly answer as a **gap to prepare**. Never
+   invent experience — this is rehearsal, not fabrication.
+7. **`notes.md`** — 4–8 "what changed" notes + the ATS keyword coverage (match by
    concept, not exact wording).
 
 **Cost discipline for big batches:** keep per-job work bounded — tailor from the

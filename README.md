@@ -62,8 +62,9 @@ stays local. It renders a clean, ATS-friendly HTML/PDF you can send.
 ### Find & batch-apply (the `/job-hunt` skill)
 
 - **Find real jobs, free:** merges **Adzuna** (broad, incl. India — free key) with
-  **Remotive / RemoteOK / Arbeitnow** (no key) and any **Greenhouse / Lever** company
-  boards you name. No Apify, no paid proxies, no LinkedIn/Indeed scraping.
+  **Remotive / RemoteOK / Arbeitnow** (no key) and any **Greenhouse / Lever / Ashby**
+  company boards you name (full JDs, often listed *before* LinkedIn). No Apify, no paid
+  proxies, no LinkedIn/Indeed scraping — everything within each source's terms.
 - **Latest-only filter:** `--days N` keeps just the freshest postings (`--days 1` =
   last 24h), sorted newest-first, with a **Posted** date on every row.
 - **Match score + ranking:** each job is scored 0–100 for profile↔JD fit and the list
@@ -73,8 +74,12 @@ stays local. It renders a clean, ATS-friendly HTML/PDF you can send.
   then tailor every job from that profile without re-interviewing.
 - **Where-to-apply map:** a single `WHERE-TO-APPLY.md` mapping each role → match % →
   which résumé variant to send → apply link, with fit tag, salary, and post date.
+- **Cover letter per job:** a short, truthful, JD-tailored letter rendered to a clean
+  PDF that matches the résumé, attached alongside it in the draft.
+- **Interview prep per job:** `prep.md` with likely questions (technical + behavioral,
+  from the JD) and truthful answers drawn from your profile — gaps flagged, not faked.
 - **Cold-email drafts:** for any role whose JD exposes an email, a ready `.eml`
-  (résumé attached) is generated — double-click, review, send. **Nothing auto-sends.**
+  (résumé + cover letter attached) is generated — double-click, review, send. **Nothing auto-sends.**
 - **Tracking dashboard:** each application gets a code (`JOB-001`, …) and a status
   lifecycle (saved → applied → interview → offer/rejected) in `DASHBOARD.md`, with
   follow-up reminders — update it with `track.mjs set JOB-003 applied`.
@@ -112,10 +117,10 @@ service; your résumé stays local.**
 
   ```bash
   cd .claude/skills/job-hunt
-  # 1. find latest Bangalore full-stack roles (set Adzuna keys for India coverage)
+  # 1. find latest roles (Adzuna keys for India coverage; --ashby/--gh/--lever add company boards)
   ADZUNA_APP_ID=… ADZUNA_APP_KEY=… node scripts/fetch-jobs.mjs \
     --query "full stack engineer" --location Bangalore --country in --days 1 \
-    --limit 80 --out applications/jobs.json
+    --ashby notion,ramp --gh stripe --limit 80 --out applications/jobs.json
   node scripts/score-jobs.mjs     --jobs applications/jobs.json          # 2. match % + rank
   node scripts/build-applications.mjs --dir applications --name "Your Name"  # 3. where-to-apply map
   node scripts/track.mjs init     --dir applications                     # 4. seed the dashboard
