@@ -96,7 +96,10 @@ Inside each folder, do:
      --attach "applications/JOB-001 - <Company> - <Role>/<...>.pdf" \
      --out "applications/JOB-001 - <Company> - <Role>/draft.eml"
    ```
-   Omit `--to` when no address was found (inserts a placeholder to fill on review).
+   If the job carries an `email` (the fetcher auto-extracts any apply address from
+   the JD), pass it as `--to`. Otherwise omit `--to` (inserts a placeholder to fill on
+   review — e.g. a recruiter email found on LinkedIn). Most postings apply via a form,
+   so a missing email is normal, not a failure.
 5. **`notes.md`** — 4–8 "what changed" notes + the ATS keyword coverage (match by
    concept, not exact wording).
 

@@ -32,6 +32,15 @@ function htmlToText(s) {
 }
 // Match on the TITLE (precise) — avoids pulling "Office Assistant" just because a
 // query word appears somewhere in the description.
+// Pull an apply/contact email out of the JD text, if one is present. Skips
+// noreply/system/asset addresses.
+function extractEmail(text) {
+  if (!text) return "";
+  const all = String(text).match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g) || [];
+  const bad = /noreply|no-reply|donotreply|do-not-reply|example\.|sentry|adzuna|wixpress|\.(png|jpe?g|gif|svg)$/i;
+  return all.find((e) => !bad.test(e)) || "";
+}
+
 function relevant(title) {
   if (!terms.length) return true;
   const t = (title || "").toLowerCase();
@@ -138,14 +147,15 @@ if (LOCATION) {
   const hit = (j) => (j.location || "").toLowerCase().includes(LOCATION.toLowerCase()) ? 0 : 1;
   jobs.sort((a, b) => hit(a) - hit(b));
 }
-jobs = jobs.slice(0, LIMIT);
+jobs = jobs.slice(0, LIMIT).map((j) => ({ ...j, email: extractEmail(j.description) }));
 
 const { writeFileSync, mkdirSync } = await import("node:fs");
 const { dirname, resolve } = await import("node:path");
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, JSON.stringify(jobs, null, 2));
 
-console.log(`Fetched ${jobs.length} jobs → ${resolve(OUT)}`);
+const withEmail = jobs.filter((j) => j.email).length;
+console.log(`Fetched ${jobs.length} jobs → ${resolve(OUT)}  (${withEmail} include an apply email in the JD)`);
 if (failed.length) console.log(`(sources that errored: ${failed.length} — others still returned results)`);
 console.log("");
 for (const j of jobs) console.log(`• ${j.title} — ${j.company} — ${j.location || (j.remote ? "Remote" : "?")}  [${j.source}]`);
