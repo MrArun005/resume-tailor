@@ -94,4 +94,42 @@ describe("coverage", () => {
     expect(r.covered).toContain("data pipeline");
     expect(r.missing).toContain("crawl");
   });
+
+  // Hyphen + multi-word concept matching (the false-negatives a real run exposed).
+  const phraseResume: ResumeContent = {
+    name: "X",
+    headline: "Full-Stack Engineer",
+    contact: [],
+    sections: [
+      {
+        title: "Summary",
+        blocks: [
+          {
+            heading: "",
+            subheading: "",
+            text: "Built systems end to end. Improved frontend performance via optimization. Product-driven mindset; avoid premature over-engineering. Designed scalable architecture.",
+            bullets: [],
+          },
+        ],
+      },
+    ],
+  };
+
+  it("treats hyphens as spaces (full-stack ≈ full stack development)", () => {
+    const r = coverage(["full stack development", "end-to-end development"], resumeText(phraseResume));
+    expect(r.missing).toHaveLength(0);
+  });
+
+  it("matches multi-word concepts whose words are scattered", () => {
+    const r = coverage(
+      ["performance optimization", "product-driven engineering", "avoiding over-engineering", "scalable architecture"],
+      resumeText(phraseResume)
+    );
+    expect(r.missing).toHaveLength(0);
+  });
+
+  it("still marks a genuinely-absent concept as missing", () => {
+    const r = coverage(["kubernetes", "knowledge graphs"], resumeText(phraseResume));
+    expect(r.covered).toHaveLength(0);
+  });
 });

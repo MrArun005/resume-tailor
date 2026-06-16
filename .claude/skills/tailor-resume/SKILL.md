@@ -145,10 +145,16 @@ Tell the candidate what you trimmed and why. Never hand back a near-empty traili
 - **State the full absolute path of the saved file** (the renderer prints it as
   "Saved résumé to: …"). Always surface it clearly — never make the user hunt for
   where the résumé went. If you also produced a PDF, give its absolute path too.
-- **For a PDF:** open the HTML in any browser and Print → "Save as PDF". The page
-  size (US Letter) and 1.25cm margins are already set via CSS `@page`, so the PDF
-  matches the preview exactly. (If `playwright`/`puppeteer` or a headless Chrome is
-  available and the user wants automation, you may render the PDF directly instead.)
+- **Produce the PDF.** Run the bundled converter — it uses Playwright/Puppeteer if
+  available and otherwise tells the user to print-to-PDF:
+
+  ```bash
+  node scripts/topdf.mjs "<Candidate Name> - <Company> - <YYYY-MM-DD>.html" "<Candidate Name> - <Company> - <YYYY-MM-DD>.pdf"
+  ```
+
+  Report the absolute PDF path it prints. If no browser engine is available, the
+  HTML is already print-ready (US Letter, 1.25cm margins via CSS `@page`) — tell the
+  user to open it and Print → Save as PDF.
 - **Summarize what changed** — 4–8 short, plain-language notes (e.g. "Reordered
   Skills to lead with the cloud stack the JD emphasizes", "Quantified the migration
   bullet with the 40% latency figure you mentioned"). This lets the candidate review
