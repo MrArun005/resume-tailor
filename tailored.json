@@ -1,0 +1,154 @@
+{
+  "name": "ARUN MALLIKARJUNA",
+  "headline": "AI Platform & Full-Stack Engineer | LLM Integration · Agentic Apps · System Design",
+  "contact": ["arunmallikarjun005@gmail.com", "+91 74835 73363", "Bengaluru, India", "LinkedIn", "Portfolio"],
+  "sections": [
+    {
+      "title": "PROFESSIONAL SUMMARY",
+      "blocks": [
+        {
+          "heading": "",
+          "subheading": "",
+          "text": "Full-stack engineer with 4+ years building and shipping production systems end to end — frontend, backend, and infrastructure — and 2+ years integrating LLM APIs (Gemini, Claude) and building core product features around them. Hands-on building agentic apps — custom AI agents with tool-calling, multi-step orchestration, subagents, system-prompt design, RAG pipelines, and evals — backed by strong system-design judgment and a product-driven mindset that ties code to the real customer problem. Comfortable owning the full lifecycle solo or in a small team — debugging and fixing failing code, reviewing implementations against the PRD, and running thorough QA (SIT, smoke, UAT, VAPT) before release.",
+          "bullets": []
+        }
+      ]
+    },
+    {
+      "title": "PROFESSIONAL EXPERIENCE",
+      "blocks": [
+        {
+          "heading": "Senior Software Engineer — Tecnotree Convergence",
+          "subheading": "Jan 2024 – Present · Bengaluru, India",
+          "text": "",
+          "bullets": [
+            "Owned architecture and technical decisions for a rule-based Promotion Engine — the team's go-to for design choices — letting business teams launch telecom campaigns without redeployment and removing engineering from the campaign-launch loop.",
+            "Took the lead when systems failed: independently debugged and fixed production bottlenecks across distributed microservices, sustaining 99.5% availability under high transaction volume.",
+            "Reviewed code and architecture against the PRD and ran thorough QA — SIT, smoke testing, UAT, and coordinated VAPT — to ship reliable releases.",
+            "Made pragmatic performance and scope trade-offs without over-engineering — improved frontend performance ~30% via optimized React rendering, and tuned rule evaluation to cut per-request latency.",
+            "Integrated third-party services and contributed to CI/CD and deployment workflows to ship reliably across the stack.",
+            "Built reporting dashboards and analytics that surfaced campaign performance, aligning engineering output to clear business outcomes."
+          ]
+        },
+        {
+          "heading": "Software Engineer — Tecnotree Convergence",
+          "subheading": "Oct 2021 – Dec 2023 · Bengaluru, India",
+          "text": "",
+          "bullets": [
+            "Built scalable REST APIs in Node.js for high-volume transaction processing, optimizing for low latency under concurrent load with async/await and event-driven patterns.",
+            "Contributed to the microservices architecture, improving end-to-end throughput and system performance.",
+            "Developed configurable campaign workflows so non-technical business teams could launch promotions independently — aligning the code to a real customer and business need.",
+            "Optimized promotion rule-evaluation logic to reduce per-request latency and improve processing efficiency."
+          ]
+        }
+      ]
+    },
+    {
+      "title": "PROJECTS",
+      "blocks": [
+        {
+          "heading": "Tailorwright — Multi-Surface AI Agent Platform",
+          "subheading": "Next.js · TypeScript · Node.js · NestJS · Claude API",
+          "text": "",
+          "bullets": [
+            "Built a full-stack TypeScript system with four front-ends — a web app, a Claude Code skill, a custom subagent, and a CLI — from one shared agent core, spanning frontend, backend, and tooling.",
+            "Designed the agent architecture: authored the system prompts, wired multi-step tool-calling and a delegated subagent, and built a planner/executor loop that reads inputs, decides actions, and self-corrects on failure.",
+            "Enforced a strict no-fabrication guardrail and structured-output schemas so the agent's responses stay grounded and machine-validatable, with retries on schema mismatch.",
+            "Built a deterministic, evaluation-ready scoring core and ran evals to measure agent output quality across cases, iterating on prompts to raise pass rates.",
+            "Instrumented the agents for end-to-end debuggability and hardened the web app against SSRF and malicious input."
+          ]
+        },
+        {
+          "heading": "Free Resume Pro — AI SaaS Platform",
+          "subheading": "Next.js · React.js · Node.js · Gemini API · Vercel",
+          "text": "",
+          "bullets": [
+            "Designed, built, and launched a full-stack AI SaaS product end to end as the sole developer — frontend, backend, and deployment — owning the entire lifecycle on a one-person team.",
+            "Integrated the Gemini API with structured prompt engineering and a retrieval-augmented (RAG) flow over embeddings and vector retrieval for ATS scoring, job-description matching, and AI résumé rewriting.",
+            "Architected a privacy-first system with zero user-data storage, shipped 12+ customizable templates with inline editing, and scaled it on Vercel — making pragmatic trade-offs to ship fast without over-engineering."
+          ]
+        },
+        {
+          "heading": "Promotion Manager System — Internal Platform",
+          "subheading": "Node.js · React.js · Microservices · REST APIs",
+          "text": "",
+          "bullets": [
+            "Designed and built a scalable promotion-management system for telecom campaigns on a microservices backend.",
+            "Built a rule-based engine that evaluates eligibility and applies promotions in real time, enabling non-technical teams to configure campaigns without code deployments.",
+            "Optimized rule processing to improve throughput and reduce evaluation latency across high-volume traffic."
+          ]
+        }
+      ]
+    },
+    {
+      "title": "TECHNICAL SKILLS",
+      "blocks": [
+        {
+          "heading": "Languages",
+          "subheading": "",
+          "text": "JavaScript (ES6+), TypeScript, Python",
+          "bullets": []
+        },
+        {
+          "heading": "AI & LLMs",
+          "subheading": "",
+          "text": "LLM API integration (Gemini, Claude), AI Agents / Agentic Apps, Tool-Calling & Multi-Step Orchestration, Subagents, Prompt & System-Prompt Engineering, RAG pipelines, Embeddings & Vector Retrieval, Structured Outputs, Evals",
+          "bullets": []
+        },
+        {
+          "heading": "Backend",
+          "subheading": "",
+          "text": "Node.js, NestJS, Express.js, GraphQL, Apollo, Django, Flask, REST API design, Async/Await · Promises · Event Loop",
+          "bullets": []
+        },
+        {
+          "heading": "Frontend",
+          "subheading": "",
+          "text": "React.js, Next.js, State Management, Routing, HTML5, CSS3, Tailwind CSS",
+          "bullets": []
+        },
+        {
+          "heading": "Databases",
+          "subheading": "",
+          "text": "PostgreSQL (SQL), MongoDB · MongoDB Atlas (NoSQL), Schema Design",
+          "bullets": []
+        },
+        {
+          "heading": "Architecture & Infra",
+          "subheading": "",
+          "text": "Microservices, System Design, Design Patterns, Reliability & Scaling, Serverless, CI/CD, Vercel, Railway",
+          "bullets": []
+        },
+        {
+          "heading": "Auth & Security",
+          "subheading": "",
+          "text": "Firebase Authentication, JWT, Clerk, Authentication & Authorization, SSRF / Input Hardening",
+          "bullets": []
+        },
+        {
+          "heading": "QA & Testing",
+          "subheading": "",
+          "text": "SIT, Smoke Testing, UAT, VAPT",
+          "bullets": []
+        },
+        {
+          "heading": "Tools & Methods",
+          "subheading": "",
+          "text": "Git, Jenkins, Stripe, Agile, Scrum",
+          "bullets": []
+        }
+      ]
+    },
+    {
+      "title": "EDUCATION",
+      "blocks": [
+        {
+          "heading": "Bachelor of Engineering — Computer Science",
+          "subheading": "Maharaja Institute of Technology, Mysuru · Graduated 2021",
+          "text": "",
+          "bullets": []
+        }
+      ]
+    }
+  ]
+}

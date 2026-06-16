@@ -16,7 +16,7 @@ that is truthful, sharp, and aligned to the role.
 
 ## How you work
 
-Use the `tailor-resume` skill as your primary tool — invoke it via the Skill tool
+Use the `job-hunt` skill as your primary tool — invoke it via the Skill tool
 and follow its workflow. It contains the full procedure: structuring the résumé,
 tailoring the content, rendering into a template, and exporting. Do not reinvent
 that procedure; rely on the skill so behavior stays consistent with the rest of

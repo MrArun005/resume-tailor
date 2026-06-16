@@ -1,0 +1,178 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@page { size: Letter; margin: 1.25cm; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.page { width: 100%; margin: 0; padding: 0; }
+.rt-sec-title { break-after: avoid; page-break-after: avoid; }
+.rt-entry-head { break-inside: avoid; page-break-inside: avoid; break-after: avoid; page-break-after: avoid; }
+.rt-bullets li { break-inside: avoid; page-break-inside: avoid; }
+.rt-text, .rt-bullets li { orphans: 2; widows: 2; }
+body { font-family: Helvetica, Arial, sans-serif; color: #1f2937; font-size: 10.5pt; line-height: 1.45; }
+.rt-head { margin-bottom: 12pt; }
+.rt-name { font-size: 22pt; font-weight: 700; margin: 0; color: #1f3a5f; }
+.rt-headline { color: #374151; margin-top: 2pt; font-size: 11pt; }
+.rt-contact { font-size: 9.5pt; color: #4b5563; margin-top: 5pt; }
+.rt-sec { margin-top: 13pt; }
+.rt-sec-title { font-size: 11pt; text-transform: uppercase; letter-spacing: .1em; color: #1f3a5f; border-bottom: 2px solid #1f3a5f; padding-bottom: 2pt; margin: 0 0 6pt; }
+.rt-entry { margin-bottom: 9pt; }
+.rt-entry-head { display: flex; justify-content: space-between; gap: 8pt; align-items: baseline; }
+.rt-heading { font-weight: 700; }
+.rt-sub { color: #6b7280; white-space: nowrap; font-size: 9.5pt; }
+.rt-text { margin: 2pt 0; }
+.rt-bullets { margin: 3pt 0 0; padding-left: 16pt; }
+.rt-bullets li { margin: 2pt 0; }
+</style>
+</head>
+<body>
+<div class="page">
+<header class="rt-head">
+<h1 class="rt-name">ARUN MALLIKARJUNA</h1>
+<div class="rt-headline">AI Platform &amp; Full-Stack Engineer | LLM Integration · Agentic Apps · System Design</div>
+<div class="rt-contact">arunmallikarjun005@gmail.com<span class="rt-sep"> · </span>+91 74835 73363<span class="rt-sep"> · </span>Bengaluru, India<span class="rt-sep"> · </span>LinkedIn<span class="rt-sep"> · </span>Portfolio</div>
+</header>
+<section class="rt-sec">
+<h2 class="rt-sec-title">PROFESSIONAL SUMMARY</h2>
+<div class="rt-entry">
+<p class="rt-text">Full-stack engineer with 4+ years building and shipping production systems end to end — frontend, backend, and infrastructure — and 2+ years integrating LLM APIs (Gemini, Claude) and building core product features around them. Hands-on building agentic apps — custom AI agents with tool-calling, multi-step orchestration, subagents, system-prompt design, RAG pipelines, and evals — backed by strong system-design judgment and a product-driven mindset that ties code to the real customer problem. Comfortable owning the full lifecycle solo or in a small team — debugging and fixing failing code, reviewing implementations against the PRD, and running thorough QA (SIT, smoke, UAT, VAPT) before release.</p>
+</div>
+</section>
+<section class="rt-sec">
+<h2 class="rt-sec-title">PROFESSIONAL EXPERIENCE</h2>
+<div class="rt-entry">
+<div class="rt-entry-head">
+<span class="rt-heading">Senior Software Engineer — Tecnotree Convergence</span>
+<span class="rt-sub">Jan 2024 – Present · Bengaluru, India</span>
+</div>
+<ul class="rt-bullets">
+<li>Owned architecture and technical decisions for a rule-based Promotion Engine — the team&#39;s go-to for design choices — letting business teams launch telecom campaigns without redeployment and removing engineering from the campaign-launch loop.</li>
+<li>Took the lead when systems failed: independently debugged and fixed production bottlenecks across distributed microservices, sustaining 99.5% availability under high transaction volume.</li>
+<li>Reviewed code and architecture against the PRD and ran thorough QA — SIT, smoke testing, UAT, and coordinated VAPT — to ship reliable releases.</li>
+<li>Made pragmatic performance and scope trade-offs without over-engineering — improved frontend performance ~30% via optimized React rendering, and tuned rule evaluation to cut per-request latency.</li>
+<li>Integrated third-party services and contributed to CI/CD and deployment workflows to ship reliably across the stack.</li>
+<li>Built reporting dashboards and analytics that surfaced campaign performance, aligning engineering output to clear business outcomes.</li>
+</ul>
+</div>
+<div class="rt-entry">
+<div class="rt-entry-head">
+<span class="rt-heading">Software Engineer — Tecnotree Convergence</span>
+<span class="rt-sub">Oct 2021 – Dec 2023 · Bengaluru, India</span>
+</div>
+<ul class="rt-bullets">
+<li>Built scalable REST APIs in Node.js for high-volume transaction processing, optimizing for low latency under concurrent load with async/await and event-driven patterns.</li>
+<li>Contributed to the microservices architecture, improving end-to-end throughput and system performance.</li>
+<li>Developed configurable campaign workflows so non-technical business teams could launch promotions independently — aligning the code to a real customer and business need.</li>
+<li>Optimized promotion rule-evaluation logic to reduce per-request latency and improve processing efficiency.</li>
+</ul>
+</div>
+</section>
+<section class="rt-sec">
+<h2 class="rt-sec-title">PROJECTS</h2>
+<div class="rt-entry">
+<div class="rt-entry-head">
+<span class="rt-heading">Tailorwright — Multi-Surface AI Agent Platform</span>
+<span class="rt-sub">Next.js · TypeScript · Node.js · NestJS · Claude API</span>
+</div>
+<ul class="rt-bullets">
+<li>Built a full-stack TypeScript system with four front-ends — a web app, a Claude Code skill, a custom subagent, and a CLI — from one shared agent core, spanning frontend, backend, and tooling.</li>
+<li>Designed the agent architecture: authored the system prompts, wired multi-step tool-calling and a delegated subagent, and built a planner/executor loop that reads inputs, decides actions, and self-corrects on failure.</li>
+<li>Enforced a strict no-fabrication guardrail and structured-output schemas so the agent&#39;s responses stay grounded and machine-validatable, with retries on schema mismatch.</li>
+<li>Built a deterministic, evaluation-ready scoring core and ran evals to measure agent output quality across cases, iterating on prompts to raise pass rates.</li>
+<li>Instrumented the agents for end-to-end debuggability and hardened the web app against SSRF and malicious input.</li>
+</ul>
+</div>
+<div class="rt-entry">
+<div class="rt-entry-head">
+<span class="rt-heading">Free Resume Pro — AI SaaS Platform</span>
+<span class="rt-sub">Next.js · React.js · Node.js · Gemini API · Vercel</span>
+</div>
+<ul class="rt-bullets">
+<li>Designed, built, and launched a full-stack AI SaaS product end to end as the sole developer — frontend, backend, and deployment — owning the entire lifecycle on a one-person team.</li>
+<li>Integrated the Gemini API with structured prompt engineering and a retrieval-augmented (RAG) flow over embeddings and vector retrieval for ATS scoring, job-description matching, and AI résumé rewriting.</li>
+<li>Architected a privacy-first system with zero user-data storage, shipped 12+ customizable templates with inline editing, and scaled it on Vercel — making pragmatic trade-offs to ship fast without over-engineering.</li>
+</ul>
+</div>
+<div class="rt-entry">
+<div class="rt-entry-head">
+<span class="rt-heading">Promotion Manager System — Internal Platform</span>
+<span class="rt-sub">Node.js · React.js · Microservices · REST APIs</span>
+</div>
+<ul class="rt-bullets">
+<li>Designed and built a scalable promotion-management system for telecom campaigns on a microservices backend.</li>
+<li>Built a rule-based engine that evaluates eligibility and applies promotions in real time, enabling non-technical teams to configure campaigns without code deployments.</li>
+<li>Optimized rule processing to improve throughput and reduce evaluation latency across high-volume traffic.</li>
+</ul>
+</div>
+</section>
+<section class="rt-sec">
+<h2 class="rt-sec-title">TECHNICAL SKILLS</h2>
+<div class="rt-entry">
+<div class="rt-entry-head">
+<span class="rt-heading">Languages</span>
+</div>
+<p class="rt-text">JavaScript (ES6+), TypeScript, Python</p>
+</div>
+<div class="rt-entry">
+<div class="rt-entry-head">
+<span class="rt-heading">AI &amp; LLMs</span>
+</div>
+<p class="rt-text">LLM API integration (Gemini, Claude), AI Agents / Agentic Apps, Tool-Calling &amp; Multi-Step Orchestration, Subagents, Prompt &amp; System-Prompt Engineering, RAG pipelines, Embeddings &amp; Vector Retrieval, Structured Outputs, Evals</p>
+</div>
+<div class="rt-entry">
+<div class="rt-entry-head">
+<span class="rt-heading">Backend</span>
+</div>
+<p class="rt-text">Node.js, NestJS, Express.js, GraphQL, Apollo, Django, Flask, REST API design, Async/Await · Promises · Event Loop</p>
+</div>
+<div class="rt-entry">
+<div class="rt-entry-head">
+<span class="rt-heading">Frontend</span>
+</div>
+<p class="rt-text">React.js, Next.js, State Management, Routing, HTML5, CSS3, Tailwind CSS</p>
+</div>
+<div class="rt-entry">
+<div class="rt-entry-head">
+<span class="rt-heading">Databases</span>
+</div>
+<p class="rt-text">PostgreSQL (SQL), MongoDB · MongoDB Atlas (NoSQL), Schema Design</p>
+</div>
+<div class="rt-entry">
+<div class="rt-entry-head">
+<span class="rt-heading">Architecture &amp; Infra</span>
+</div>
+<p class="rt-text">Microservices, System Design, Design Patterns, Reliability &amp; Scaling, Serverless, CI/CD, Vercel, Railway</p>
+</div>
+<div class="rt-entry">
+<div class="rt-entry-head">
+<span class="rt-heading">Auth &amp; Security</span>
+</div>
+<p class="rt-text">Firebase Authentication, JWT, Clerk, Authentication &amp; Authorization, SSRF / Input Hardening</p>
+</div>
+<div class="rt-entry">
+<div class="rt-entry-head">
+<span class="rt-heading">QA &amp; Testing</span>
+</div>
+<p class="rt-text">SIT, Smoke Testing, UAT, VAPT</p>
+</div>
+<div class="rt-entry">
+<div class="rt-entry-head">
+<span class="rt-heading">Tools &amp; Methods</span>
+</div>
+<p class="rt-text">Git, Jenkins, Stripe, Agile, Scrum</p>
+</div>
+</section>
+<section class="rt-sec">
+<h2 class="rt-sec-title">EDUCATION</h2>
+<div class="rt-entry">
+<div class="rt-entry-head">
+<span class="rt-heading">Bachelor of Engineering — Computer Science</span>
+<span class="rt-sub">Maharaja Institute of Technology, Mysuru · Graduated 2021</span>
+</div>
+</div>
+</section>
+</div>
+</body>
+</html>

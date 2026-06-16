@@ -11,7 +11,7 @@ It ships in **four forms** so anyone can use it:
 | Form | For whom | How it tailors | Needs |
 |---|---|---|---|
 | **Web app** | Anyone with a browser | Calls Claude or Gemini server-side | An API key, a running server |
-| **Claude Code Skill** (`/tailor-resume`) | Anyone using Claude Code | Claude does it in-session | Just Claude Code — no API key |
+| **Claude Code Skill** (`/job-hunt`) | Anyone using Claude Code | Claude does it in-session | Just Claude Code — no API key |
 | **Subagent** (`resume-tailor`) | Claude Code workflows | Wraps the skill | Just Claude Code |
 | **Headless CLI** (`pnpm tailor`) | CI, cron, scripts | `@anthropic-ai/sdk` | `ANTHROPIC_API_KEY` |
 
@@ -20,17 +20,17 @@ the deterministic template renderers in [`lib/templates/`](lib/templates/).
 
 ## Quickstart — the Claude Code skill (no API key, no server)
 
-The fastest way to use Tailorwright. Install the `/tailor-resume` skill globally,
+The fastest way to use Tailorwright. Install the `/job-hunt` skill globally,
 then tailor any résumé entirely on your own machine:
 
 ```bash
-# Install the tailor-resume skill for Claude Code
+# Install the job-hunt skill for Claude Code
 git clone https://github.com/MrArun005/resume-tailor.git /tmp/resume-tailor \
-  && cp -r /tmp/resume-tailor/.claude/skills/tailor-resume ~/.claude/skills/ \
-  && echo "Done — restart Claude Code, then type /tailor-resume"
+  && cp -r /tmp/resume-tailor/.claude/skills/job-hunt ~/.claude/skills/ \
+  && echo "Done — restart Claude Code, then type /job-hunt"
 ```
 
-Restart Claude Code and type **`/tailor-resume`** — point it at your résumé file and a
+Restart Claude Code and type **`/job-hunt`** — point it at your résumé file and a
 job description (plus an optional template or must-include highlights). Claude does the
 tailoring **in-session**: no API key, no server, no third-party upload — your résumé
 stays local. It renders a clean, ATS-friendly HTML/PDF you can send.
@@ -72,10 +72,10 @@ pnpm dev                                # http://localhost:3000
 
 Installed under [`.claude/`](.claude/). In Claude Code:
 
-- `/tailor-resume` — point it at a résumé file + a job description (+ optional
+- `/job-hunt` — point it at a résumé file + a job description (+ optional
   template/highlights). **Claude does the tailoring in-session — no API key, no
   server, no third-party service; your résumé stays local.** It renders to HTML via
-  [`.claude/skills/tailor-resume/scripts/render.mjs`](.claude/skills/tailor-resume/scripts/render.mjs)
+  [`.claude/skills/job-hunt/scripts/render.mjs`](.claude/skills/job-hunt/scripts/render.mjs)
   (dependency-free) and you Print → Save as PDF.
 - The `resume-tailor` subagent is a thin specialist that invokes the skill from
   larger workflows.
@@ -116,7 +116,7 @@ pnpm test        # vitest — template renderers, HTML normalizer, résumé diff
   `.env.local` and restart the dev server — `.env.local` is only read at startup.
 - **PDF export errors locally:** run `pnpm exec playwright install chromium`.
 - **The Skill doesn't appear in Claude Code:** ensure the folder lives at
-  `.claude/skills/tailor-resume/` in the project, or copy it to `~/.claude/skills/`
+  `.claude/skills/job-hunt/` in the project, or copy it to `~/.claude/skills/`
   for global use, then restart Claude Code.
 
 ## Stack
