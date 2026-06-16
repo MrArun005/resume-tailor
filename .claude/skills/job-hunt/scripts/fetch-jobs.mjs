@@ -93,13 +93,23 @@ async function adzuna() {
   const id = process.env.ADZUNA_APP_ID, key = process.env.ADZUNA_APP_KEY;
   if (!id || !key) return [];
   const country = (args.country || "in").toString();
-  const u = `https://api.adzuna.com/v1/api/jobs/${country}/search/1?app_id=${id}&app_key=${key}`
-    + `&what=${encodeURIComponent(QUERY)}${LOCATION ? `&where=${encodeURIComponent(LOCATION)}` : ""}&results_per_page=30&content-type=application/json`;
-  const d = await getJSON(u);
-  return (d.results || []).map((j) => ({
-    title: j.title, company: j.company?.display_name || "", location: j.location?.display_name || "",
-    remote: /remote/i.test(j.location?.display_name || ""), url: j.redirect_url, description: htmlToText(j.description), source: "Adzuna",
-  }));
+  const perPage = 50;
+  const pages = Math.min(6, Math.ceil(Math.max(LIMIT, perPage) / perPage)); // up to 300 results
+  let out = [];
+  for (let p = 1; p <= pages; p++) {
+    const u = `https://api.adzuna.com/v1/api/jobs/${country}/search/${p}?app_id=${id}&app_key=${key}`
+      + `&what=${encodeURIComponent(QUERY)}${LOCATION ? `&where=${encodeURIComponent(LOCATION)}` : ""}&results_per_page=${perPage}&content-type=application/json`;
+    try {
+      const d = await getJSON(u);
+      const items = (d.results || []).map((j) => ({
+        title: j.title, company: j.company?.display_name || "", location: j.location?.display_name || "",
+        remote: /remote/i.test(j.location?.display_name || ""), url: j.redirect_url, description: htmlToText(j.description), source: "Adzuna",
+      }));
+      out = out.concat(items);
+      if (items.length < perPage) break; // no more pages
+    } catch { break; }
+  }
+  return out;
 }
 
 const tasks = [remotive(), remoteok(), arbeitnow(), adzuna()];
@@ -116,14 +126,19 @@ for (const s of settled) {
 
 // filter (relevance + location), dedupe by title+company, cap to LIMIT
 const seen = new Set();
-const jobs = all
+let jobs = all
   .filter((j) => j.title && j.url && relevant(j.title) && locOk(j.location, j.remote))
   .filter((j) => {
     // Dedupe key ignores a trailing "(City)" so the same role across many cities collapses to one.
     const k = `${j.title.replace(/\s*\([^)]*\)\s*$/, "").trim()}|${j.company}`.toLowerCase();
     if (seen.has(k)) return false; seen.add(k); return true;
-  })
-  .slice(0, LIMIT);
+  });
+// When a location is requested, surface its matches first so they're not cut by the limit.
+if (LOCATION) {
+  const hit = (j) => (j.location || "").toLowerCase().includes(LOCATION.toLowerCase()) ? 0 : 1;
+  jobs.sort((a, b) => hit(a) - hit(b));
+}
+jobs = jobs.slice(0, LIMIT);
 
 const { writeFileSync, mkdirSync } = await import("node:fs");
 const { dirname, resolve } = await import("node:path");
