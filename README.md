@@ -4,6 +4,8 @@ Tailor a résumé to a job description — in your résumé's **own layout**, or
 clean ATS-friendly template — with the claim that every line stays grounded in
 what you actually wrote.
 
+![Tailorwright web app](docs/screenshots/app.png)
+
 It ships in **four forms** so anyone can use it:
 
 | Form | For whom | How it tailors | Needs |
@@ -30,6 +32,10 @@ the deterministic template renderers in [`lib/templates/`](lib/templates/).
 - **Consistent pagination:** 1.25cm margins on every page; long entries flow across
   page breaks instead of leaving gaps.
 - **Exports:** PDF, Word (.docx), plain text, Markdown.
+
+A résumé rendered into the **Modern** template:
+
+![Modern template](docs/screenshots/template-modern.png)
 
 ## Web app
 
@@ -84,6 +90,17 @@ templates as the web app.
 ```bash
 pnpm test        # vitest — template renderers, HTML normalizer, résumé diff
 ```
+
+## Troubleshooting
+
+- **"No AI engine configured" / analyze fails (web app, CLI):** a key is missing or
+  malformed. Anthropic keys start with `sk-ant-`; Google AI Studio keys start with
+  `AIzaSy` (a value beginning `AQ.` is an OAuth token, not an API key). Fix
+  `.env.local` and restart the dev server — `.env.local` is only read at startup.
+- **PDF export errors locally:** run `pnpm exec playwright install chromium`.
+- **The Skill doesn't appear in Claude Code:** ensure the folder lives at
+  `.claude/skills/tailor-resume/` in the project, or copy it to `~/.claude/skills/`
+  for global use, then restart Claude Code.
 
 ## Stack
 
