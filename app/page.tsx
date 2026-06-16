@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PreviewFrame } from "@/components/PreviewFrame";
+import { TEMPLATES, getTemplate, type TemplateId } from "@/lib/templates";
+import type { ResumeContent } from "@/lib/content";
 
 type Tier = "fast" | "best";
 type Phase = "idle" | "analyzing" | "analyzed" | "tailoring" | "done";
@@ -28,6 +30,7 @@ type Persisted = {
   changes: string[];
   engine: Engine | null;
   tab: Tab;
+  template: TemplateId;
 };
 
 export default function Home() {
@@ -46,6 +49,7 @@ export default function Home() {
   const [engine, setEngine] = useState<Engine | null>(null);
 
   const [tab, setTab] = useState<Tab>("original");
+  const [template, setTemplate] = useState<TemplateId>("mirror");
   const [drag, setDrag] = useState(false);
   const [error, setError] = useState("");
   const [exporting, setExporting] = useState<string>("");
@@ -81,6 +85,7 @@ export default function Home() {
         if (s.changes) setChanges(s.changes);
         if (s.engine) setEngine(s.engine);
         if (s.tab) setTab(s.tab);
+        if (s.template) setTemplate(s.template);
         // Never restore a transient busy phase — derive a resting one from data.
         setPhase(s.tailoredHtml ? "done" : s.templateHtml ? "analyzed" : "idle");
       }
@@ -105,6 +110,7 @@ export default function Home() {
         changes,
         engine,
         tab,
+        template,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {
@@ -123,6 +129,7 @@ export default function Home() {
     changes,
     engine,
     tab,
+    template,
   ]);
 
   const analyze = useCallback(async (base64: string) => {
@@ -203,8 +210,8 @@ export default function Home() {
     setExporting(fmt);
     setError("");
     try {
-      const html = tailoredHtml || templateHtml;
-      const exportContent = tailoredContent || content;
+      const html = showHtml;
+      const exportContent = activeContent ?? content;
       const base = fileName.replace(/\.pdf$/i, "") || "resume";
       const res = await fetch("/api/export", {
         method: "POST",
@@ -238,7 +245,14 @@ export default function Home() {
 
   const busy = phase === "analyzing" || phase === "tailoring";
   const noProvider = providers !== null && providers.length === 0;
-  const showHtml = tab === "tailored" && tailoredHtml ? tailoredHtml : templateHtml;
+  const activeContent = (tab === "tailored" ? tailoredContent : content) as ResumeContent | null;
+  const mirrorHtml = tab === "tailored" && tailoredHtml ? tailoredHtml : templateHtml;
+  const showHtml =
+    template === "mirror"
+      ? mirrorHtml
+      : activeContent
+        ? (getTemplate(template)?.render(activeContent) ?? mirrorHtml)
+        : mirrorHtml;
 
   return (
     <>
@@ -486,6 +500,31 @@ export default function Home() {
 
           {/* ---------- Preview ---------- */}
           <div>
+            <div
+              className="flex items-center gap-3"
+              style={{ marginBottom: 12, flexWrap: "wrap" }}
+            >
+              <span className="micro">Layout</span>
+              <div className="seg">
+                <button
+                  className={template === "mirror" ? "on" : ""}
+                  disabled={!templateHtml}
+                  onClick={() => setTemplate("mirror")}
+                >
+                  Your layout
+                </button>
+                {TEMPLATES.map((t) => (
+                  <button
+                    key={t.id}
+                    className={template === t.id ? "on" : ""}
+                    disabled={!templateHtml}
+                    onClick={() => setTemplate(t.id)}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="preview-tabs">
               <button
                 className={tab === "original" ? "on" : ""}
