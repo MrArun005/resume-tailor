@@ -45,10 +45,23 @@ re-interviewing per job**. Never add anything the candidate didn't confirm.
 - **Single job:** a posting URL (use the browser engine — navigate + snapshot — to
   extract title, company, JD, and any apply/recruiter email) or pasted text.
 - **Batch / "find jobs":** gather criteria (role, location/remote, seniority,
-  must-haves; infer from the résumé when terse). Use **web search** (`"<role>"
-  "<location>" jobs`, or `site:boards.greenhouse.io <role>`, `site:jobs.lever.co`)
-  and/or the browser to collect real postings. For each, capture title, company, JD,
-  link, and apply email if present.
+  must-haves; infer from the résumé when terse), then fetch from **free** sources
+  with the bundled script (no Apify, no paid proxies, no LinkedIn/Indeed scraping):
+
+  ```bash
+  node scripts/fetch-jobs.mjs --query "full stack AI engineer" --location Bangalore \
+    --limit 20 [--gh stripe,vercel] [--lever ramp,notion] --out applications/jobs.json
+  ```
+
+  It merges **Remotive / RemoteOK / Arbeitnow** (no key; remote/startup-heavy),
+  **Greenhouse / Lever** per company (`--gh`/`--lever`, no key, full JD — get tokens
+  via a web search like `site:boards.greenhouse.io <role>`), and **Adzuna** (broad,
+  incl. India — set `ADZUNA_APP_ID`+`ADZUNA_APP_KEY`, free). Output is a JSON array of
+  `{ title, company, location, url, description }`. Read it and tailor each.
+
+  Note for the user: the no-key sources skew **remote/global**; for dense Bangalore/
+  India coverage, add an Adzuna key or pass specific `--gh`/`--lever` company tokens.
+  You may also still take a posting URL (browser fetch) or pasted JD directly.
 
 Only use postings you actually found/were given — never invent jobs, JDs, or emails.
 If a board blocks fetching or hides the JD, note it and ask the user to paste that one.
