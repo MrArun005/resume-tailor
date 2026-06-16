@@ -16,11 +16,21 @@ async function renderPdf(html: string): Promise<Buffer> {
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "networkidle" });
+    // SSRF guard: the résumé HTML is client-supplied. Block ALL outbound network
+    // and file:// loads so a crafted document cannot make the server fetch internal
+    // services, cloud metadata, or local files. Our résumé documents are fully
+    // self-contained (inline CSS, no external resources), so nothing legitimate is
+    // fetched — only inline data:/about: for the document itself is allowed.
+    await page.route("**/*", (route) => {
+      const url = route.request().url();
+      if (url.startsWith("data:") || url.startsWith("about:")) return route.continue();
+      return route.abort();
+    });
+    await page.setContent(html, { waitUntil: "load" });
     const pdf = await page.pdf({
       format: "Letter",
       printBackground: true,
-      // Honor the document's own "@page { margin: 5cm }" so every page (not just
+      // Honor the document's own "@page { margin: 1.25cm }" so every page (not just
       // the first/last) gets identical margins. preferCSSPageSize makes Chromium
       // use the CSS @page size/margin instead of the margin option below.
       preferCSSPageSize: true,
@@ -48,6 +58,11 @@ export async function POST(req: NextRequest) {
     const format: Format = body.format;
     const filenameBase: string = body.filename || "resume";
     const html: string = body.html || "";
+
+    // Size cap (anti-DoS): our résumé documents are well under 1MB.
+    if (html.length > 3_000_000) {
+      return NextResponse.json({ error: "Document too large." }, { status: 413 });
+    }
 
     if (format === "txt" || format === "md") {
       const content = ResumeContentSchema.parse(body.content ?? {});

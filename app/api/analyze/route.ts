@@ -19,6 +19,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing pdfBase64." }, { status: 400 });
     }
 
+    // Size cap (anti-DoS): ~12MB of base64 ≈ a 9MB PDF, well above any real résumé.
+    if (pdfBase64.length > 12_000_000) {
+      return NextResponse.json({ error: "PDF too large (max ~9MB)." }, { status: 413 });
+    }
+
     const provider = getProvider(pref);
     console.log(`[analyze] start · provider=${provider.name} tier=${tier} pdf=${pdfBase64.length}b64`);
     const raw = await provider.generate({ prompt: ANALYZE_PROMPT, tier, pdfBase64 });

@@ -271,6 +271,32 @@ export default function Home() {
         ? (getTemplate(template)?.render(activeContent) ?? mirrorHtml)
         : mirrorHtml;
 
+  // Wipe the locally-stored session (résumé content, tailored versions, JD, etc.).
+  function clearData() {
+    if (!window.confirm("Clear your résumé, job description, and all tailored results from this browser?")) {
+      return;
+    }
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+    setFileName("");
+    setJd("");
+    setCustom("");
+    setTemplateHtml("");
+    setContent(null);
+    setTailoredHtml("");
+    setTailoredContent(null);
+    setChanges([]);
+    setEngine(null);
+    setTab("original");
+    setTemplate("mirror");
+    setPhase("idle");
+    setError("");
+    setCanRetry(false);
+  }
+
   return (
     <>
       <header className="topbar">
@@ -286,10 +312,16 @@ export default function Home() {
                 {engine.provider} · {engine.model}
               </span>
             )}
-            <span className="chip">
+            <span
+              className="chip"
+              title="Your résumé is sent to the AI provider you configured to be processed. It is not stored on any server — only in this browser, which you can clear anytime."
+            >
               <span className="dot" />
-              Private · nothing stored
+              No server storage
             </span>
+            <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={clearData}>
+              Clear data
+            </button>
           </div>
         </div>
       </header>
@@ -652,7 +684,7 @@ export default function Home() {
         >
           <span className="micro">Tailorwright</span>
           <span className="micro">
-            Grounded in your real experience · no fabrication · processed in-session
+            Grounded in your real experience · no fabrication · sent to your AI provider, not stored on a server
           </span>
         </div>
       </footer>

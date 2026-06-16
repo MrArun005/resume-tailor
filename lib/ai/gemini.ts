@@ -7,9 +7,12 @@ const MODELS: Record<Tier, string> = {
   fast: "gemini-2.5-flash",
 };
 
-// Dump the raw Gemini reply to the dev terminal AND to gemini-last-response.txt
-// in the project root, so it's visible no matter which terminal you're watching.
+// Debug helper: dump the raw Gemini reply to the terminal and a file. The reply
+// contains the full résumé content, so this is DISABLED by default and only runs
+// when DEBUG_AI=1 is set in the environment — otherwise résumé data would be
+// written to disk / logs in normal use.
 function dumpResponse(model: string, text: string) {
+  if (process.env.DEBUG_AI !== "1") return;
   console.log(`\n===== GEMINI RAW RESPONSE (${model}, ${text.length} chars) =====\n${text}\n===== END GEMINI RESPONSE =====\n`);
   try {
     writeFileSync("gemini-last-response.txt", `model: ${model}\nlength: ${text.length}\n\n${text}\n`);

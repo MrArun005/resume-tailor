@@ -22,6 +22,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Size caps (anti-DoS) on free-text + template inputs.
+    if (
+      String(jobDescription).length > 100_000 ||
+      customization.length > 50_000 ||
+      String(templateHtml).length > 3_000_000
+    ) {
+      return NextResponse.json({ error: "Input too large." }, { status: 413 });
+    }
+
     const provider = getProvider(pref);
     console.log(`[tailor] start · provider=${provider.name} tier=${tier} jd=${jobDescription.length}ch`);
 
