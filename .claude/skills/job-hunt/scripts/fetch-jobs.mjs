@@ -118,7 +118,11 @@ for (const s of settled) {
 const seen = new Set();
 const jobs = all
   .filter((j) => j.title && j.url && relevant(j.title) && locOk(j.location, j.remote))
-  .filter((j) => { const k = `${j.title}|${j.company}`.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
+  .filter((j) => {
+    // Dedupe key ignores a trailing "(City)" so the same role across many cities collapses to one.
+    const k = `${j.title.replace(/\s*\([^)]*\)\s*$/, "").trim()}|${j.company}`.toLowerCase();
+    if (seen.has(k)) return false; seen.add(k); return true;
+  })
   .slice(0, LIMIT);
 
 const { writeFileSync, mkdirSync } = await import("node:fs");
