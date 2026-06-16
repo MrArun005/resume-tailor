@@ -4,7 +4,10 @@
 // one structured JSON list the job-hunt skill can tailor against.
 //
 //   node fetch-jobs.mjs --query "full stack AI engineer" [--location Bangalore]
-//        [--limit 20] [--gh stripe,vercel] [--lever ramp,notion] [--out applications/jobs.json]
+//        [--days 1] [--limit 20] [--gh stripe,vercel] [--lever ramp,notion] [--out applications/jobs.json]
+//
+//   --days N : only postings from the last N days (1 = last 24h), newest first.
+//              Adzuna filters server-side; other sources filter on their post date.
 //
 // Sources (all free):
 //   • Remotive, RemoteOK, Arbeitnow      — no key, remote/startup heavy
@@ -18,6 +21,7 @@ for (let i = 2; i < process.argv.length; i++) {
 }
 const QUERY = (args.query || "").toString();
 const LOCATION = (args.location || "").toString();
+const DAYS = args.days ? parseInt(args.days, 10) : 0; // 0 = no recency filter; 1 = last 24h
 const LIMIT = parseInt(args.limit || "20", 10);
 const OUT = args.out || "applications/jobs.json";
 const terms = QUERY.toLowerCase().split(/\s+/).filter((t) => t.length > 2);
@@ -68,6 +72,7 @@ async function remotive() {
   return (d.jobs || []).map((j) => ({
     title: j.title, company: j.company_name, location: j.candidate_required_location || "Remote",
     remote: true, url: j.url, description: htmlToText(j.description), source: "Remotive",
+    posted: j.publication_date || "",
   }));
 }
 async function remoteok() {
@@ -75,6 +80,7 @@ async function remoteok() {
   return (Array.isArray(d) ? d : []).filter((j) => j && j.position).map((j) => ({
     title: j.position, company: j.company, location: j.location || "Remote",
     remote: true, url: j.url, description: htmlToText(j.description), source: "RemoteOK",
+    posted: j.date || (j.epoch ? new Date(j.epoch * 1000).toISOString() : ""),
   }));
 }
 async function arbeitnow() {
@@ -82,6 +88,7 @@ async function arbeitnow() {
   return (d.data || []).map((j) => ({
     title: j.title, company: j.company_name, location: j.location || "", remote: !!j.remote,
     url: j.url, description: htmlToText(j.description), source: "Arbeitnow",
+    posted: j.created_at ? new Date(j.created_at * 1000).toISOString() : "",
   }));
 }
 async function greenhouse(token) {
@@ -89,6 +96,7 @@ async function greenhouse(token) {
   return (d.jobs || []).map((j) => ({
     title: j.title, company: token, location: j.location?.name || "", remote: /remote/i.test(j.location?.name || ""),
     url: j.absolute_url, description: htmlToText(j.content), source: `Greenhouse:${token}`,
+    posted: j.updated_at || "",
   }));
 }
 async function lever(token) {
@@ -96,6 +104,7 @@ async function lever(token) {
   return (Array.isArray(d) ? d : []).map((j) => ({
     title: j.text, company: token, location: j.categories?.location || "", remote: /remote/i.test(j.categories?.location || ""),
     url: j.hostedUrl, description: j.descriptionPlain || htmlToText(j.description), source: `Lever:${token}`,
+    posted: j.createdAt ? new Date(j.createdAt).toISOString() : "",
   }));
 }
 async function adzuna() {
@@ -107,12 +116,14 @@ async function adzuna() {
   let out = [];
   for (let p = 1; p <= pages; p++) {
     const u = `https://api.adzuna.com/v1/api/jobs/${country}/search/${p}?app_id=${id}&app_key=${key}`
-      + `&what=${encodeURIComponent(QUERY)}${LOCATION ? `&where=${encodeURIComponent(LOCATION)}` : ""}&results_per_page=${perPage}&content-type=application/json`;
+      + `&what=${encodeURIComponent(QUERY)}${LOCATION ? `&where=${encodeURIComponent(LOCATION)}` : ""}`
+      + `${DAYS ? `&max_days_old=${DAYS}&sort_by=date` : ""}&results_per_page=${perPage}&content-type=application/json`;
     try {
       const d = await getJSON(u);
       const items = (d.results || []).map((j) => ({
         title: j.title, company: j.company?.display_name || "", location: j.location?.display_name || "",
         remote: /remote/i.test(j.location?.display_name || ""), url: j.redirect_url, description: htmlToText(j.description), source: "Adzuna",
+        posted: j.created || "",
       }));
       out = out.concat(items);
       if (items.length < perPage) break; // no more pages
@@ -142,11 +153,14 @@ let jobs = all
     const k = `${j.title.replace(/\s*\([^)]*\)\s*$/, "").trim()}|${j.company}`.toLowerCase();
     if (seen.has(k)) return false; seen.add(k); return true;
   });
-// When a location is requested, surface its matches first so they're not cut by the limit.
-if (LOCATION) {
-  const hit = (j) => (j.location || "").toLowerCase().includes(LOCATION.toLowerCase()) ? 0 : 1;
-  jobs.sort((a, b) => hit(a) - hit(b));
+// Recency filter: keep only jobs posted within the last DAYS (when set + date known).
+if (DAYS) {
+  const cutoff = Date.now() - DAYS * 864e5;
+  jobs = jobs.filter((j) => j.posted && Date.parse(j.posted) >= cutoff);
 }
+// Sort: location matches first (not cut by the limit), then newest-first.
+const hit = (j) => (LOCATION && (j.location || "").toLowerCase().includes(LOCATION.toLowerCase()) ? 0 : 1);
+jobs.sort((a, b) => hit(a) - hit(b) || (Date.parse(b.posted || 0) || 0) - (Date.parse(a.posted || 0) || 0));
 jobs = jobs.slice(0, LIMIT).map((j) => ({ ...j, email: extractEmail(j.description) }));
 
 const { writeFileSync, mkdirSync } = await import("node:fs");
@@ -158,5 +172,5 @@ const withEmail = jobs.filter((j) => j.email).length;
 console.log(`Fetched ${jobs.length} jobs → ${resolve(OUT)}  (${withEmail} include an apply email in the JD)`);
 if (failed.length) console.log(`(sources that errored: ${failed.length} — others still returned results)`);
 console.log("");
-for (const j of jobs) console.log(`• ${j.title} — ${j.company} — ${j.location || (j.remote ? "Remote" : "?")}  [${j.source}]`);
+for (const j of jobs) console.log(`• ${(j.posted || "").slice(0, 10) || "  ?  "}  ${j.title} — ${j.company} — ${j.location || (j.remote ? "Remote" : "?")}  [${j.source.split(":")[0]}]`);
 if (!process.env.ADZUNA_APP_ID) console.log("\nTip: set ADZUNA_APP_ID + ADZUNA_APP_KEY (free at developer.adzuna.com) for broad India/Bangalore coverage.");

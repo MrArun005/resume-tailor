@@ -76,7 +76,8 @@ jobs.forEach((job, i) => {
       draftCell = `[cold-email](drafts/${basename(out)})`;
     }
   }
-  rows.push(`| ${n} | ${job.company} | ${job.title.replace(/\|/g, " ")} | ${job.location} | ${fit(job.company)} | **${VARIANTS[v].tag}** | ${job.email || "—"} | ${draftCell} | [apply](${job.url}) |`);
+  const posted = (job.posted || "").slice(0, 10) || "—";
+  rows.push(`| ${n} | ${posted} | ${job.company} | ${job.title.replace(/\|/g, " ")} | ${job.location} | ${fit(job.company)} | **${VARIANTS[v].tag}** | ${job.email || "—"} | ${draftCell} | [apply](${job.url}) |`);
 });
 
 const md = `# Where to apply — ${jobs.length} roles
@@ -86,8 +87,8 @@ Where a JD exposed an email, a ready cold-email draft is linked (open the \`.eml
 
 **Résumés** (in \`resumes/\`): **AI** = Full-Stack AI Engineer · **Founding** = Founding Engineer · **Systems** = Full-Stack Systems Engineer.
 
-| # | Company | Role | Location | Fit | Résumé | Email | Cold-email | Link |
-|---|---------|------|----------|-----|--------|-------|-----------|------|
+| # | Posted | Company | Role | Location | Fit | Résumé | Email | Cold-email | Link |
+|---|--------|---------|------|----------|-----|--------|-------|-----------|------|
 ${rows.join("\n")}
 
 > ${drafted} cold-email draft(s) generated in \`drafts/\` (only for roles whose JD exposed an email).

@@ -50,14 +50,19 @@ re-interviewing per job**. Never add anything the candidate didn't confirm.
 
   ```bash
   node scripts/fetch-jobs.mjs --query "full stack AI engineer" --location Bangalore \
-    --limit 20 [--gh stripe,vercel] [--lever ramp,notion] --out applications/jobs.json
+    [--days 1] --limit 20 [--gh stripe,vercel] [--lever ramp,notion] --out applications/jobs.json
   ```
+
+  Pass **`--days N`** to keep only fresh postings (`--days 1` = last 24h), sorted
+  newest-first — use it when the user wants "latest" / "today's" jobs. 24h is strict
+  (few results); widen to `--days 3` or `--days 7` for a fuller fresh batch. Output
+  carries a `posted` date per job, surfaced as a **Posted** column in WHERE-TO-APPLY.md.
 
   It merges **Remotive / RemoteOK / Arbeitnow** (no key; remote/startup-heavy),
   **Greenhouse / Lever** per company (`--gh`/`--lever`, no key, full JD — get tokens
   via a web search like `site:boards.greenhouse.io <role>`), and **Adzuna** (broad,
   incl. India — set `ADZUNA_APP_ID`+`ADZUNA_APP_KEY`, free). Output is a JSON array of
-  `{ title, company, location, url, description }`. Read it and tailor each.
+  `{ title, company, location, url, description, posted, email }`. Read it and tailor each.
 
   Note for the user: the no-key sources skew **remote/global**; for dense Bangalore/
   India coverage, add an Adzuna key or pass specific `--gh`/`--lever` company tokens.
