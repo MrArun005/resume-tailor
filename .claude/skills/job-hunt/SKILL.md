@@ -17,10 +17,14 @@ a truthful, ATS-ready tailored résumé (HTML + PDF) and a ready-to-send email d
 each application tracked by a code in an `applications/` folder. Tailoring never
 fabricates; the user always reviews and sends.
 
-Bundled scripts (all dependency-light, run from this skill's directory):
+Bundled scripts (all dependency-light, no API key, run from this skill's directory):
+- `scripts/fetch-jobs.mjs` — find real jobs from free sources (see Step 2)
+- `scripts/score-jobs.mjs` — AI match score + best-fit ranking (see Step 2b)
 - `scripts/render.mjs <content.json> <template> <out.html>` — content → styled HTML
 - `scripts/topdf.mjs <in.html> <out.pdf>` — HTML → PDF (Playwright/Puppeteer, SSRF-safe)
 - `scripts/mkdraft.mjs --to … --subject … --body-file … --attach … --out …` — `.eml` draft
+- `scripts/build-applications.mjs` — bind jobs ↔ résumés ↔ links (see Step 5b)
+- `scripts/track.mjs <init|set|board|list>` — application tracking dashboard (see Step 4)
 
 ## Step 1 — Build the master profile ONCE (interview once, apply to many)
 
@@ -76,6 +80,31 @@ re-interviewing per job**. Never add anything the candidate didn't confirm.
 Only use postings you actually found/were given — never invent jobs, JDs, or emails.
 If a board blocks fetching or hides the JD, note it and ask the user to paste that one.
 
+The fetcher also captures **salary** (where the source exposes it, e.g. Adzuna) and a
+`posted` date on every job.
+
+## Step 2b — Score, rank, and research (the "copilot" layer)
+
+**Match score + ranking.** Run the scorer to rate each job's fit against the master
+profile (0–100) and rank the list best-fit first:
+
+```bash
+node scripts/score-jobs.mjs --jobs applications/jobs.json
+```
+
+It reads the candidate's skills from the résumé sources in `resumes/.src/*.json` (or
+pass `--skills "react,node,…"`), writes `match` + `matchWhy` into each job, and re-sorts
+the file. This is the **deterministic, no-API baseline**. You (Claude) should then
+**refine the top candidates in-session** — read each high-scoring JD against the profile
+and adjust `match` where keyword overlap misses real semantic fit (e.g. an "AI-augmented
+development" role that's a strong fit but doesn't name your exact stack). Keep edits
+truthful; the score reflects fit, never inflates it.
+
+**Company intelligence.** For the top-ranked jobs the user cares about, do a quick web
+search per company (what they do, stack, stage, any recent news/funding) and write a
+2–3 line brief into that job's `company` field (and its `job.md`). Only real, sourced
+facts — never guess. Skip for low-ranked jobs to keep the batch cheap.
+
 ## Step 3 — Per job: tailor, render, draft, track
 
 Create the workspace once: `applications/`. For each job assign a sequential
@@ -118,15 +147,23 @@ profile in one focused pass per job, don't re-derive the profile, and reuse the 
 template across the batch. If the user gave a cap (e.g. "top 10"), respect it and say
 what you skipped.
 
-## Step 4 — Write the index (the tracker)
+## Step 4 — Tracking dashboard (status lifecycle)
 
-Maintain `applications/INDEX.md` — one row per job, so the codes are the tracker:
+Don't hand-maintain a markdown table — use the tracker. Seed it from the scored jobs,
+then update status as the user applies/hears back:
 
-```markdown
-| Code | Company | Role | Coverage | Apply email | Posting | Status |
-|------|---------|------|----------|-------------|---------|--------|
-| JOB-001 | Acme | Senior Engineer | 88% | careers@acme.com | <link> | draft ready |
+```bash
+node scripts/track.mjs init                         # seed applications/status.json + DASHBOARD.md
+node scripts/track.mjs set JOB-003 applied --followup 2026-06-25
+node scripts/track.mjs set JOB-003 interview --note "recruiter call Tue"
+node scripts/track.mjs board                         # re-render the dashboard
 ```
+
+`init` is safe to re-run (preserves existing statuses, matched by link; adds only new
+jobs). It writes **`applications/DASHBOARD.md`**: a summary count per stage, a
+**follow-ups due** section, and every application sorted most-advanced-first
+(offer → interview → applied → saved → closed) with Match %, salary, dates, and notes.
+Lifecycle: **saved → applied → interview → offer | rejected | dropped**.
 
 ## Step 5b — Bind it all together (batch)
 

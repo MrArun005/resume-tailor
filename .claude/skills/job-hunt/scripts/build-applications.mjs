@@ -16,6 +16,8 @@ for (let i = 2; i < process.argv.length; i++) if (process.argv[i].startsWith("--
 const DIR = args.dir || "applications";
 const NAME = args.name || "Arun Mallikarjuna";
 const jobs = JSON.parse(readFileSync(args.jobs || `${DIR}/jobs.json`, "utf8"));
+// If the jobs were scored (score-jobs.mjs), rank best-fit first.
+if (jobs.some((j) => typeof j.match === "number")) jobs.sort((a, b) => (b.match || 0) - (a.match || 0));
 
 // Résumé variants (PDF files in <dir>/resumes/). Label → filename + short tag.
 const VARIANTS = {
@@ -77,18 +79,21 @@ jobs.forEach((job, i) => {
     }
   }
   const posted = (job.posted || "").slice(0, 10) || "—";
-  rows.push(`| ${n} | ${posted} | ${job.company} | ${job.title.replace(/\|/g, " ")} | ${job.location} | ${fit(job.company)} | **${VARIANTS[v].tag}** | ${job.email || "—"} | ${draftCell} | [apply](${job.url}) |`);
+  const match = typeof job.match === "number" ? `${job.match}%` : "—";
+  rows.push(`| ${n} | ${match} | ${posted} | ${job.company} | ${job.title.replace(/\|/g, " ")} | ${job.location} | ${job.salary || "—"} | ${fit(job.company)} | **${VARIANTS[v].tag}** | ${job.email || "—"} | ${draftCell} | [apply](${job.url}) |`);
 });
 
 const md = `# Where to apply — ${jobs.length} roles
 
-Generated for **${NAME}**. Each row maps the role to the **résumé** to send and the **apply link**.
-Where a JD exposed an email, a ready cold-email draft is linked (open the \`.eml\`, review, send).
+Generated for **${NAME}**, **ranked best-fit first** (Match %). Each row maps the role to
+the **résumé** to send and the **apply link**. Where a JD exposed an email, a ready
+cold-email draft is linked (open the \`.eml\`, review, send).
 
+**Match** = profile↔JD fit (from \`score-jobs.mjs\`). **Salary** from the posting where shown (\`*\` = estimated).
 **Résumés** (in \`resumes/\`): **AI** = Full-Stack AI Engineer · **Founding** = Founding Engineer · **Systems** = Full-Stack Systems Engineer.
 
-| # | Posted | Company | Role | Location | Fit | Résumé | Email | Cold-email | Link |
-|---|--------|---------|------|----------|-----|--------|-------|-----------|------|
+| # | Match | Posted | Company | Role | Location | Salary | Fit | Résumé | Email | Cold-email | Link |
+|---|-------|--------|---------|------|----------|--------|-----|--------|-------|-----------|------|
 ${rows.join("\n")}
 
 > ${drafted} cold-email draft(s) generated in \`drafts/\` (only for roles whose JD exposed an email).

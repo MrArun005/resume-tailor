@@ -66,13 +66,18 @@ stays local. It renders a clean, ATS-friendly HTML/PDF you can send.
   boards you name. No Apify, no paid proxies, no LinkedIn/Indeed scraping.
 - **Latest-only filter:** `--days N` keeps just the freshest postings (`--days 1` =
   last 24h), sorted newest-first, with a **Posted** date on every row.
+- **Match score + ranking:** each job is scored 0–100 for profile↔JD fit and the list
+  is ranked **best-fit first** (deterministic, no API; the skill refines it in-session).
+- **Salary intelligence:** captures the posting's salary range where exposed.
 - **One profile, many jobs:** interview once to capture true-but-off-résumé material,
   then tailor every job from that profile without re-interviewing.
-- **Where-to-apply map:** a single `WHERE-TO-APPLY.md` mapping each role → which résumé
-  variant to send → apply link, with a fit tag and the post date.
+- **Where-to-apply map:** a single `WHERE-TO-APPLY.md` mapping each role → match % →
+  which résumé variant to send → apply link, with fit tag, salary, and post date.
 - **Cold-email drafts:** for any role whose JD exposes an email, a ready `.eml`
   (résumé attached) is generated — double-click, review, send. **Nothing auto-sends.**
-- **Tracked:** each application gets a code (`JOB-001`, …) in an `applications/` folder.
+- **Tracking dashboard:** each application gets a code (`JOB-001`, …) and a status
+  lifecycle (saved → applied → interview → offer/rejected) in `DASHBOARD.md`, with
+  follow-up reminders — update it with `track.mjs set JOB-003 applied`.
 
 A résumé rendered into the **Modern** template:
 
@@ -106,15 +111,21 @@ service; your résumé stays local.**
   each, builds the where-to-apply map, and drafts cold emails. Fetch directly:
 
   ```bash
-  # latest Bangalore full-stack roles from the last 24h (set Adzuna keys for India coverage)
-  ADZUNA_APP_ID=… ADZUNA_APP_KEY=… node .claude/skills/job-hunt/scripts/fetch-jobs.mjs \
+  cd .claude/skills/job-hunt
+  # 1. find latest Bangalore full-stack roles (set Adzuna keys for India coverage)
+  ADZUNA_APP_ID=… ADZUNA_APP_KEY=… node scripts/fetch-jobs.mjs \
     --query "full stack engineer" --location Bangalore --country in --days 1 \
     --limit 80 --out applications/jobs.json
-  node .claude/skills/job-hunt/scripts/build-applications.mjs --dir applications --name "Your Name"
+  node scripts/score-jobs.mjs     --jobs applications/jobs.json          # 2. match % + rank
+  node scripts/build-applications.mjs --dir applications --name "Your Name"  # 3. where-to-apply map
+  node scripts/track.mjs init     --dir applications                     # 4. seed the dashboard
+  # later, as you apply / hear back:
+  node scripts/track.mjs set JOB-003 applied --followup 2026-06-25
   ```
 
   `--days` is the recency filter (omit for all, `1` = last 24h, `3`/`7` for a fuller
-  fresh batch). Output lands in `applications/` — open `WHERE-TO-APPLY.md` first.
+  fresh batch). Output lands in `applications/` — open `WHERE-TO-APPLY.md` (ranked
+  best-fit first) and `DASHBOARD.md` (status tracker).
 - The `resume-tailor` subagent is a thin specialist that invokes the skill from
   larger workflows.
 

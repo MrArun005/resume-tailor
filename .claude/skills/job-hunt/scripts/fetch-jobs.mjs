@@ -55,6 +55,21 @@ function extractEmail(text) {
   return all.find((e) => !bad.test(e)) || "";
 }
 
+// Format a salary range into a compact string (e.g. "₹18L–25L/yr" or "$120k–150k").
+// Adzuna gives raw numbers + a currency implied by country; we keep it simple.
+function fmtSalary(min, max, country) {
+  if (!min && !max) return "";
+  const cur = (country || "in").toLowerCase() === "in" ? "₹" : country?.toLowerCase() === "gb" ? "£" : "$";
+  const unit = (n) => {
+    if (!n) return "";
+    if (cur === "₹") return n >= 1e5 ? `${(n / 1e5).toFixed(n % 1e5 ? 1 : 0)}L` : `${Math.round(n / 1e3)}k`;
+    return n >= 1e3 ? `${Math.round(n / 1e3)}k` : `${n}`;
+  };
+  const lo = unit(min), hi = unit(max);
+  const body = lo && hi && lo !== hi ? `${lo}–${hi}` : lo || hi;
+  return `${cur}${body}/yr`;
+}
+
 function relevant(title) {
   if (!terms.length) return true;
   const t = (title || "").toLowerCase();
@@ -134,6 +149,7 @@ async function adzuna(days) {
         title: j.title, company: j.company?.display_name || "", location: j.location?.display_name || "",
         remote: /remote/i.test(j.location?.display_name || ""), url: j.redirect_url, description: htmlToText(j.description), source: "Adzuna",
         posted: j.created || "",
+        salary: fmtSalary(j.salary_min, j.salary_max, country) + (j.salary_is_predicted === "1" ? "*" : ""),
       }));
       out = out.concat(items);
       if (items.length < perPage) break; // no more pages
