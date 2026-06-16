@@ -123,6 +123,14 @@ node scripts/render.mjs tailored.json <template> "<Candidate Name> - tailored.ht
 self-contained HTML document with print margins (1.25cm on every page) and smart
 pagination already baked in.
 
+**Name the file `<Candidate Name> - <Company> - <YYYY-MM-DD>.html`.** Take the
+company from the job description (it's usually named there); if it isn't, ask the
+candidate for it. Use today's date. For example:
+
+```bash
+node scripts/render.mjs tailored.json modern "Arun Mallikarjuna - Sprinto - 2026-06-16.html"
+```
+
 **Mind the length — aim for 1–2 pages.** A résumé that spills a few lines onto a
 near-empty extra page reads as careless. After rendering, estimate the page count
 (very roughly: a full single-column page in `modern`/`classic` holds ~45–55 lines of

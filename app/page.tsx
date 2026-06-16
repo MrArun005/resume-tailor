@@ -34,6 +34,7 @@ type Persisted = {
   fileName: string;
   jd: string;
   custom: string;
+  company: string;
   tier: Tier;
   templateHtml: string;
   content: unknown;
@@ -53,6 +54,7 @@ export default function Home() {
   const [fileName, setFileName] = useState("");
   const [jd, setJd] = useState("");
   const [custom, setCustom] = useState("");
+  const [company, setCompany] = useState("");
   const [tier, setTier] = useState<Tier>("fast");
 
   const [phase, setPhase] = useState<Phase>("idle");
@@ -98,6 +100,7 @@ export default function Home() {
         if (s.fileName) setFileName(s.fileName);
         if (s.jd) setJd(s.jd);
         if (s.custom) setCustom(s.custom);
+        if (s.company) setCompany(s.company);
         if (s.tier) setTier(s.tier);
         if (s.templateHtml) setTemplateHtml(s.templateHtml);
         if (s.content) setContent(s.content);
@@ -126,6 +129,7 @@ export default function Home() {
         fileName,
         jd,
         custom,
+        company,
         tier,
         templateHtml,
         content,
@@ -148,6 +152,7 @@ export default function Home() {
     fileName,
     jd,
     custom,
+    company,
     tier,
     templateHtml,
     content,
@@ -262,13 +267,13 @@ export default function Home() {
     try {
       const html = showHtml;
       const exportContent = activeContent ?? content;
-      // Name the file after the résumé's owner + a date-time stamp.
+      // Name the file "<Candidate Name> - <Company> - <YYYY-MM-DD>".
       const resumeName =
         (activeContent?.name ?? "").trim() || fileName.replace(/\.pdf$/i, "") || "resume";
       const now = new Date();
       const p = (n: number) => String(n).padStart(2, "0");
-      const stamp = `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())} ${p(now.getHours())}-${p(now.getMinutes())}-${p(now.getSeconds())}`;
-      const base = `${resumeName} - ${stamp}`;
+      const datestamp = `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
+      const base = [resumeName, company.trim(), datestamp].filter(Boolean).join(" - ");
       const res = await fetch("/api/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -353,6 +358,7 @@ export default function Home() {
     setFileName("");
     setJd("");
     setCustom("");
+    setCompany("");
     setTemplateHtml("");
     setContent(null);
     setTailoredHtml("");
@@ -530,6 +536,20 @@ export default function Home() {
                 placeholder="Paste the full job posting — responsibilities, requirements, the lot. The more detail, the sharper the tailoring."
                 value={jd}
                 onChange={(e) => setJd(e.target.value)}
+              />
+
+              <div className="flex items-center gap-2" style={{ margin: "16px 0 8px" }}>
+                <span className="step-title" style={{ fontSize: 14 }}>
+                  Target company
+                </span>
+                <span className="micro">optional · used in the file name</span>
+              </div>
+              <input
+                className="jd"
+                style={{ minHeight: 0, padding: "10px 12px" }}
+                placeholder="e.g. Sprinto"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
               />
 
               <div className="flex items-center gap-2" style={{ margin: "16px 0 8px" }}>

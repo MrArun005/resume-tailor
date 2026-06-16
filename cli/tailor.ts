@@ -24,12 +24,13 @@ type Args = {
   jd?: string;
   template: TemplateId;
   custom: string;
+  company: string;
   out?: string;
   model: string;
 };
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { template: "classic", custom: "", model: "claude-opus-4-8" };
+  const args: Args = { template: "classic", custom: "", company: "", model: "claude-opus-4-8" };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const next = () => argv[++i];
@@ -37,10 +38,16 @@ function parseArgs(argv: string[]): Args {
     else if (a === "--jd") args.jd = next();
     else if (a === "--template") args.template = next() as TemplateId;
     else if (a === "--custom") args.custom = next() ?? "";
+    else if (a === "--company") args.company = next() ?? "";
     else if (a === "--out") args.out = next();
     else if (a === "--model") args.model = next() ?? args.model;
   }
   return args;
+}
+
+// Filename-safe: keep letters/digits/spaces and a few friendly punctuation marks.
+function safeFilePart(s: string): string {
+  return s.replace(/[^a-z0-9 ()&._-]+/gi, " ").replace(/\s+/g, " ").trim();
 }
 
 // Read an argument that's either an inline string or a path to a file.
@@ -77,7 +84,7 @@ async function main() {
   if (!args.resume || !args.jd) {
     console.error(
       "Usage: pnpm tailor --resume <file.pdf|file.txt> --jd <file|text> " +
-        "[--template classic|modern|compact|mirror] [--custom <text>] [--out <file.html>] [--model <id>]"
+        "[--template classic|modern|compact|mirror] [--company <name>] [--custom <text>] [--out <file.html>] [--model <id>]"
     );
     process.exit(1);
   }
@@ -157,7 +164,14 @@ async function main() {
     html = tpl.render(finalContent);
   }
 
-  const outPath = args.out ?? `${(finalContent.name || "resume").replace(/[^a-z0-9-_]+/gi, "_")}-tailored.html`;
+  // Default filename: "<Candidate Name> - <Company> - <YYYY-MM-DD>.html".
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const nameParts = [
+    safeFilePart(finalContent.name || "Resume"),
+    args.company && safeFilePart(args.company),
+    dateStr,
+  ].filter(Boolean);
+  const outPath = args.out ?? `${nameParts.join(" - ")}.html`;
   writeFileSync(outPath, html);
 
   console.error(`\n[tailor-cli] wrote ${outPath} (template: ${args.template})`);
