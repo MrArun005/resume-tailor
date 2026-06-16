@@ -18,6 +18,23 @@ It ships in **four forms** so anyone can use it:
 All four share one core: the prompts in [`lib/ai/prompts.ts`](lib/ai/prompts.ts) and
 the deterministic template renderers in [`lib/templates/`](lib/templates/).
 
+## Quickstart — the Claude Code skill (no API key, no server)
+
+The fastest way to use Tailorwright. Install the `/tailor-resume` skill globally,
+then tailor any résumé entirely on your own machine:
+
+```bash
+# Install the tailor-resume skill for Claude Code
+git clone https://github.com/MrArun005/resume-tailor.git /tmp/resume-tailor \
+  && cp -r /tmp/resume-tailor/.claude/skills/tailor-resume ~/.claude/skills/ \
+  && echo "Done — restart Claude Code, then type /tailor-resume"
+```
+
+Restart Claude Code and type **`/tailor-resume`** — point it at your résumé file and a
+job description (plus an optional template or must-include highlights). Claude does the
+tailoring **in-session**: no API key, no server, no third-party upload — your résumé
+stays local. It renders a clean, ATS-friendly HTML/PDF you can send.
+
 ## Features
 
 - **Two layout modes:** a faithful **mirror** of your original PDF's design, or one
