@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# debug: raw model responses
+gemini-last-response.txt
+
+# brainstorming visual companion
+.superpowers/
+
+# local test/debug artifacts
+.playwright-mcp/
+test-output.txt
