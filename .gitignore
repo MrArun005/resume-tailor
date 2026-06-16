@@ -58,3 +58,6 @@ test-output.txt
 
 # personal email drafts
 *.eml
+
+# stray résumé content artifact
+tailored.json
